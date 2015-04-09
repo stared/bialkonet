@@ -15,38 +15,58 @@ var svg = d3.select("#d3graph").append("svg")
   .attr("height", height);
     
 
-d3.json("graph.json", function(error, graph) {
+// in future, data should be joined beforehand
+d3.json("graph.json", function(errorJSON, dataJSON) {
+  d3.csv("HA_metadata_pdb.csv", function(errorCSV, dataCSV) {
 
-    force.nodes(graph.nodes)
-        .links(graph.links)
-        .linkStrength(function (d) {
-            return Math.pow(d.weight, 4);
-        })
-        .start();
-
-    var link = svg.selectAll(".link")
-        .data(graph.links)
-        .enter().append("line")
-        .attr("class", "link");
-
-    var node = svg.selectAll(".node")
-        .data(graph.nodes)
-        .enter().append("circle")
-        .attr("class", "node")
-        .attr("r", 5)
-        .style("fill", function(d) {
-            return color(d.sero_num); 
-        });
-
-    node.append("title")
-        .text(function(d) { return d.p_id + " (" + d.sero + ")"; });
-
-    force.on("tick", function() {
-        node.attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
+    var additionalData = _.indexBy(dataCSV, 'id');
+    dataJSON.nodes = dataJSON.nodes.map(function(node) {
+      return _.assign(node, additionalData[node.p_id]);
     });
+    drawGraph(dataJSON);
+
+  });
 });
 
+
+//
+// Graph
+//
+
+function drawGraph(graph) {
+
+  console.log("Graph data", graph);
+
+  force.nodes(graph.nodes)
+      .links(graph.links)
+      .linkStrength(function (d) {
+          return Math.pow(d.weight, 4);
+      })
+      .start();
+
+  var link = svg.selectAll(".link")
+      .data(graph.links)
+      .enter().append("line")
+      .attr("class", "link");
+
+  var node = svg.selectAll(".node")
+      .data(graph.nodes)
+      .enter().append("circle")
+      .attr("class", "node")
+      .attr("r", 5)
+      .style("fill", function(d) {
+          return color(d.sero_num); 
+      });
+
+  node.append("title")
+      .text(function(d) { return d.p_id + " (" + d.sero + ")"; });
+
+  force.on("tick", function() {
+      node.attr("cx", function(d) { return d.x; })
+          .attr("cy", function(d) { return d.y; });
+  });
+
+}
 
 //
 // Tooltip
