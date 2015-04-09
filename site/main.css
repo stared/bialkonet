@@ -4,11 +4,10 @@
     stroke-width: 1.5px;
 }
 
-.link
+.node:hover
 {
-    stroke: #999;
-    stroke-opacity: .6;
-    display: none;
+    stroke: #000;
+    stroke-width: 1.5px;
 }
 
 div.tooltip

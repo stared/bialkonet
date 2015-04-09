@@ -37,17 +37,14 @@ function drawGraph(graph) {
 
   console.log("Graph data", graph);
 
+  var tooltip = new Tooltip('#d3graph');
+
   force.nodes(graph.nodes)
       .links(graph.links)
       .linkStrength(function (d) {
           return Math.pow(d.weight, 4);
       })
       .start();
-
-  var link = svg.selectAll(".link")
-      .data(graph.links)
-      .enter().append("line")
-      .attr("class", "link");
 
   var node = svg.selectAll(".node")
       .data(graph.nodes)
@@ -56,10 +53,13 @@ function drawGraph(graph) {
       .attr("r", 5)
       .style("fill", function(d) {
           return color(d.sero_num); 
+      })
+      .on('mouseover', function (d) {
+        tooltip.show([d.p_id, d.sero, d.location, d.year, d.host].join("<br>"));
+      })
+      .on('mouseout', function (d) {
+        tooltip.out();
       });
-
-  node.append("title")
-      .text(function(d) { return d.p_id + " (" + d.sero + ")"; });
 
   force.on("tick", function() {
       node.attr("cx", function(d) { return d.x; })
