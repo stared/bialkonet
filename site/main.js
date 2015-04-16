@@ -1,4 +1,4 @@
-var width = 600,
+var width = 700,
     height = 500;
 
 var color = d3.scale.category20();
@@ -7,7 +7,7 @@ var force = d3.layout.force()
     .charge(-100)
     .linkDistance(60)
     .gravity(0.3)
-    .size([width, height]);
+    .size([width - 150, height]);
 
 
 var svg = d3.select("#d3graph").append("svg")
@@ -65,6 +65,55 @@ function drawGraph(graph) {
       node.attr("cx", function(d) { return d.x; })
           .attr("cy", function(d) { return d.y; });
   });
+
+  function zzz () {};
+
+  var optionList = [
+    {name: 'serotype (main)', func: zzz},
+    {name: 'serotype (subtype)', func: zzz},
+    {name: 'year', func: zzz},
+    {name: 'species', func: zzz},
+    {name: 'region', func: zzz}
+  ];
+
+  var graphOptions = new GraphOptions('svg', optionList);
+  graphOptions.g.attr('transform', 'translate(550, 50)');
+
+}
+
+//
+// Options
+//
+
+function GraphOptions(parentDom, optionList){
+
+  this.g = d3.select(parentDom).append('g');
+
+  var options = this.g.selectAll('.option').data(optionList);
+
+  options.enter()
+    .append('text')
+    .attr('x', 0)
+    .attr('y', function (d, i) {return 20 * i})
+    .text(function (d) {return d.name;})
+    .on('click', function (d, i) {
+      d.func();
+    });
+
+}
+
+
+//
+// Legend
+//
+
+function Legend(g) {
+
+  this.g = d3.select(parentDom).append('g');
+
+  this.update = function (nameColorList) {
+    // ...
+  };
 
 }
 
