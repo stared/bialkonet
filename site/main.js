@@ -25,6 +25,8 @@ d3.json("graph.json", function(errorJSON, dataJSON) {
     });
     drawGraph(dataJSON);
 
+    // calculate h and n
+
   });
 });
 
@@ -51,9 +53,6 @@ function drawGraph(graph) {
       .enter().append("circle")
       .attr("class", "node")
       .attr("r", 5)
-      .style("fill", function(d) {
-          return color(d.sero_num); 
-      })
       .on('mouseover', function (d) {
         tooltip.show([d.p_id, d.sero, d.location, d.year, d.host].join("<br>"));
       })
@@ -76,8 +75,33 @@ function drawGraph(graph) {
     {name: 'region', func: zzz}
   ];
 
+
   var graphOptions = new GraphOptions('svg', optionList);
-  graphOptions.g.attr('transform', 'translate(550, 50)');
+  graphOptions.g.attr('transform', 'translate(550, 25)');
+
+
+  var legend = new Legend('svg');
+  legend.g.attr('transform', 'translate(550, 150)');
+
+  var subtypes = _.chain(graph.nodes)
+    .countBy('subtype')
+    .map(function (val, key) {
+      return {name: key, count: val}
+    })
+    .sortBy('count')
+    .reverse()
+    .map(function (d, i) {
+      return _.assign(d, {color: color(i)})
+    })
+    .value();
+
+  var colorMap = _.indexBy(subtypes, 'name');
+
+  legend.update(subtypes);
+
+  node.style("fill", function(d) {
+    return colorMap[d.subtype].color; 
+  });
 
 }
 
@@ -94,7 +118,7 @@ function GraphOptions(parentDom, optionList){
   options.enter()
     .append('text')
     .attr('x', 0)
-    .attr('y', function (d, i) {return 20 * i})
+    .attr('y', function (d, i) { return 20 * i; })
     .text(function (d) {return d.name;})
     .on('click', function (d, i) {
       d.func();
@@ -107,12 +131,38 @@ function GraphOptions(parentDom, optionList){
 // Legend
 //
 
-function Legend(g) {
+function Legend(parentDom) {
 
   this.g = d3.select(parentDom).append('g');
 
   this.update = function (nameColorList) {
-    // ...
+    
+    var boxes = this.g.selectAll('.box')
+
+    boxes.remove();
+
+    boxes.data(nameColorList)
+      .enter()
+      .append('rect')
+        .attr('class', 'box')
+        .attr('x', 0)
+        .attr('y', function (d, i) { return 15 * i; })
+        .attr('width', 10)
+        .attr('height', 10)
+        .style('fill', function (d) { return d.color; })
+    
+    var labels = this.g.selectAll('.label')
+
+    labels.remove();
+
+    labels.data(nameColorList)
+      .enter()
+      .append('text')
+        .attr('class', 'label')
+        .attr('x', 15)
+        .attr('y', function (d, i) { return 15 * i + 10; })
+        .text(function (d) { return d.name; })
+
   };
 
 }
