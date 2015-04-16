@@ -20,9 +20,16 @@ d3.json("graph.json", function(errorJSON, dataJSON) {
   d3.csv("HA_metadata_pdb.csv", function(errorCSV, dataCSV) {
 
     var additionalData = _.indexBy(dataCSV, 'id');
-    dataJSON.nodes = dataJSON.nodes.map(function(node) {
-      return _.assign(node, additionalData[node.p_id]);
-    });
+    dataJSON.nodes = dataJSON.nodes
+      .map(function(d) {
+        return _.assign(d, additionalData[d.p_id]);
+      })
+      .map(function (d) {
+        return _.assign(d, {maintype: d.subtype ? d.subtype.split("N")[0] : undefined})
+      });
+
+
+
     drawGraph(dataJSON);
 
     // calculate h and n
@@ -68,11 +75,11 @@ function drawGraph(graph) {
   function zzz () {};
 
   var optionList = [
-    {name: 'serotype (main)', func: zzz},
-    {name: 'serotype (subtype)', func: zzz},
-    {name: 'year', func: zzz},
-    {name: 'species', func: zzz},
-    {name: 'region', func: zzz}
+    {name: "maintype", label: "serotype (main)"},
+    {name: "subtype", label: "serotype (subtype)"},
+    {name: "year", label: "year"},
+    {name: "host", label: "host"},
+    {name: "location", label: "location"}
   ];
 
 
@@ -99,16 +106,24 @@ function GraphOptions(parentDom, optionList, data, node, legend){
 
   var options = this.g.selectAll('.option').data(optionList);
 
+  var that = this;
+
   options.enter()
     .append('text')
-    .attr('x', 0)
-    .attr('y', function (d, i) { return 20 * i; })
-    .text(function (d) {return d.name;})
-    .on('click', function (d, i) {
-      d.func();
-    });
+      .attr('class', 'option')
+      .attr('x', 0)
+      .attr('y', function (d, i) { return 20 * i; })
+      .text(function (d) {return d.label;})
+      .on('click', function (d) {
+        that.choice(d.name);
+      });
 
   this.choice = function (field) {
+
+    options
+      .style('fill', function (d) {
+        return d.name == field ? 'black' : 'grey';
+      });
 
     var aggregated = _.chain(data)
       .countBy(field)
@@ -143,11 +158,15 @@ function Legend(parentDom) {
 
   this.g = d3.select(parentDom).append('g');
 
+
+
   this.update = function (nameColorList) {
     
-    var boxes = this.g.selectAll('.box')
+    this.g.selectAll('.box').remove();
+    this.g.selectAll('.label').remove();
 
-    boxes.remove();
+    var boxes = this.g.selectAll('.box');
+    var labels = this.g.selectAll('.label');
 
     boxes.data(nameColorList)
       .enter()
@@ -158,10 +177,6 @@ function Legend(parentDom) {
         .attr('width', 10)
         .attr('height', 10)
         .style('fill', function (d) { return d.color; })
-    
-    var labels = this.g.selectAll('.label')
-
-    labels.remove();
 
     labels.data(nameColorList)
       .enter()
