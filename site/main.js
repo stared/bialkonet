@@ -76,32 +76,13 @@ function drawGraph(graph) {
   ];
 
 
-  var graphOptions = new GraphOptions('svg', optionList);
-  graphOptions.g.attr('transform', 'translate(550, 25)');
-
-
   var legend = new Legend('svg');
   legend.g.attr('transform', 'translate(550, 150)');
 
-  var subtypes = _.chain(graph.nodes)
-    .countBy('subtype')
-    .map(function (val, key) {
-      return {name: key, count: val}
-    })
-    .sortBy('count')
-    .reverse()
-    .map(function (d, i) {
-      return _.assign(d, {color: color(i)})
-    })
-    .value();
+  var graphOptions = new GraphOptions('svg', optionList, graph.nodes, node, legend);
+  graphOptions.g.attr('transform', 'translate(550, 25)');
 
-  var colorMap = _.indexBy(subtypes, 'name');
-
-  legend.update(subtypes);
-
-  node.style("fill", function(d) {
-    return colorMap[d.subtype].color; 
-  });
+  graphOptions.choice('subtype');
 
 }
 
@@ -109,9 +90,12 @@ function drawGraph(graph) {
 // Options
 //
 
-function GraphOptions(parentDom, optionList){
+function GraphOptions(parentDom, optionList, data, node, legend){
 
   this.g = d3.select(parentDom).append('g');
+  this.data = data;
+  this.node = node;
+  this.legend = legend;
 
   var options = this.g.selectAll('.option').data(optionList);
 
@@ -123,6 +107,30 @@ function GraphOptions(parentDom, optionList){
     .on('click', function (d, i) {
       d.func();
     });
+
+  this.choice = function (field) {
+
+    var aggregated = _.chain(data)
+      .countBy(field)
+      .map(function (val, key) {
+        return {name: key, count: val}
+      })
+      .sortBy('count')
+      .reverse()
+      .map(function (d, i) {
+        return _.assign(d, {color: color(i)})
+      })
+      .value();
+
+    var colorMap = _.indexBy(aggregated, 'name');
+
+    legend.update(aggregated);
+
+    node.style("fill", function(d) {
+      return colorMap[d[field]].color; 
+    });
+
+  };
 
 }
 
