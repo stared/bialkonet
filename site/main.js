@@ -72,8 +72,6 @@ function drawGraph(graph) {
           .attr("cy", function(d) { return d.y; });
   });
 
-  function zzz () {};
-
   var optionList = [
     {name: "maintype", label: "serotype (main)"},
     {name: "subtype", label: "serotype (subtype)"},
@@ -125,25 +123,53 @@ function GraphOptions(parentDom, optionList, data, node, legend){
         return d.name == field ? 'black' : 'grey';
       });
 
-    var aggregated = _.chain(data)
-      .countBy(field)
-      .map(function (val, key) {
-        return {name: key, count: val}
-      })
-      .sortBy('count')
-      .reverse()
-      .map(function (d, i) {
-        return _.assign(d, {color: color(i)})
-      })
-      .value();
+    // hard-coded, but it will be changed
+    if (field != 'year') {
 
-    var colorMap = _.indexBy(aggregated, 'name');
+      var aggregated = _.chain(data)
+        .countBy(field)
+        .map(function (val, key) {
+          return {name: key, count: val}
+        })
+        .sortBy('count')
+        .reverse()
+        .map(function (d, i) {
+          return _.assign(d, {color: color(i)})
+        })
+        .value();
 
-    legend.update(aggregated);
+      console.log("aggregated", aggregated);
 
-    node.style("fill", function(d) {
-      return colorMap[d[field]].color; 
-    });
+      var colorMap = _.indexBy(aggregated, 'name');
+
+      legend.update(aggregated);
+
+      node.style("fill", function(d) {
+        return colorMap[d[field]].color; 
+      });
+
+    } else {
+
+      // because of data messiness, +d.year is not enough
+      var yearMin = d3.min(data, function (d) { return parseInt(d.year); }); 
+      var yearMax = d3.max(data, function (d) { return parseInt(d.year); });
+
+      console.log("yearMin", yearMin);
+      console.log(_.countBy(data, 'year'));
+
+      var colorScale = d3.scale.linear()
+        .domain([yearMin, yearMax])
+        .range(['brown', 'lightgreen']);
+
+      // right now just clearning the categorical legend 
+      legend.update([]);
+
+      node.style("fill", function(d) {
+        return colorScale(parseInt(d.year)); 
+      });
+
+    }
+
 
   };
 
