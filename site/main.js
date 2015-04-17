@@ -81,7 +81,7 @@ function drawGraph(graph) {
   ];
 
 
-  var legend = new Legend('svg');
+  var legend = new Legend('svg', node);
   legend.g.attr('transform', 'translate(550, 150)');
 
   var graphOptions = new GraphOptions('svg', optionList, graph.nodes, node, legend);
@@ -142,7 +142,7 @@ function GraphOptions(parentDom, optionList, data, node, legend){
 
       var colorMap = _.indexBy(aggregated, 'name');
 
-      legend.update(aggregated);
+      legend.update(aggregated, field);
 
       node.style("fill", function(d) {
         return colorMap[d[field]].color; 
@@ -162,7 +162,7 @@ function GraphOptions(parentDom, optionList, data, node, legend){
         .range(['brown', 'lightgreen']);
 
       // right now just clearning the categorical legend 
-      legend.update([]);
+      legend.update([], field);
 
       node.style("fill", function(d) {
         return colorScale(parseInt(d.year)); 
@@ -180,13 +180,13 @@ function GraphOptions(parentDom, optionList, data, node, legend){
 // Legend
 //
 
-function Legend(parentDom) {
+function Legend (parentDom, node) {
 
   this.g = d3.select(parentDom).append('g');
 
 
 
-  this.update = function (nameColorList) {
+  this.update = function (nameColorList, field) {
     
     this.g.selectAll('.box').remove();
     this.g.selectAll('.label').remove();
@@ -203,6 +203,14 @@ function Legend(parentDom) {
         .attr('width', 10)
         .attr('height', 10)
         .style('fill', function (d) { return d.color; })
+        .on('mouseover', function (d) {
+          node.style('opacity', function (c) {
+            return c[field] == d.name ? 1 : 0.2;
+          })
+        })
+        .on('mouseout', function (d) {
+          node.style('opacity', null);
+        });
 
     labels.data(nameColorList)
       .enter()
@@ -211,6 +219,14 @@ function Legend(parentDom) {
         .attr('x', 15)
         .attr('y', function (d, i) { return 15 * i + 10; })
         .text(function (d) { return d.name; })
+        .on('mouseover', function (d) {
+          node.style('opacity', function (c) {
+            return c[field] == d.name ? 1 : 0.2;
+          })
+        })
+        .on('mouseout', function (d) {
+          node.style('opacity', null);
+        });
 
   };
 
