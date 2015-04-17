@@ -10,6 +10,11 @@
     stroke-width: 1.5px;
 }
 
+.option, .box, .legend
+{
+    cursor: default;
+}
+
 div.tooltip
 {
     position: absolute;
