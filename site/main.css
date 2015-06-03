@@ -26,4 +26,26 @@ div.tooltip
     border: solid 1px #aaa;
     border-radius: 4px;
     pointer-events: none;
+    z-index: 10;
+}
+
+#d3graph
+{
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    border: solid 1px #aaa;
+    border-radius: 4px;
+    z-index: 0;
+}
+
+#structureViewer
+{
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 500px;
+    border: solid 1px #aaa;
+    border-radius: 4px;
+    z-index: 5;
 }
