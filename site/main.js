@@ -13,7 +13,8 @@ var force = d3.layout.force()
 var svg = d3.select("#d3graph").append("svg")
   .attr("width", width)
   .attr("height", height);
-    
+
+var proteinViewer = new ProteinViewer('structureViewer');
 
 // in future, data should be joined beforehand
 d3.json("graph.json", function(errorJSON, dataJSON) {
@@ -65,6 +66,9 @@ function drawGraph(graph) {
       })
       .on('mouseout', function (d) {
         tooltip.out();
+      })
+      .on('click', function (d) {
+        proteinViewer.load(d.p_id, ["pdb/", d.p_id, "_chA_local.pdb"].join(""));
       });
 
   force.on("tick", function() {
@@ -260,5 +264,3 @@ function Tooltip(parentDom) {
   };
 
 }
-
-
