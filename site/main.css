@@ -47,5 +47,13 @@ div.tooltip
     width: 500px;
     border: solid 1px #aaa;
     border-radius: 4px;
+    z-index: 1;
+}
+
+#superimpose
+{
+    position: absolute;
     z-index: 5;
+    left: 20px;
+    top: 20px;
 }
