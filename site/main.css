@@ -57,3 +57,10 @@ div.tooltip
     left: 20px;
     top: 20px;
 }
+
+.legendSvg
+{
+    position: absolute;
+    top: 20px;
+    left: 400px;
+}
