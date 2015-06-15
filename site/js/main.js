@@ -22,4 +22,4 @@ d3.json("data/graph.json", function(errorJSON, dataJSON) {
   });
 });
 
-
+var seq = new SequenceViewer("sequenceViewer");
