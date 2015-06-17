@@ -50,13 +50,26 @@ div.tooltip
     z-index: 1;
 }
 
+#superimpose
+{
+    position: absolute;
+    z-index: 5;
+    left: 20px;
+    top: 20px;
+}
+
+.legendSvg
+{
+    position: absolute;
+    top: 20px;
+    left: 400px;
+}
+
 #sequenceViewer
 {
     position: absolute;
     top: 500px;
     left: 740px;
-    width: 500px;
-    height: 200px;
     border: solid 1px #aaa;
     border-radius: 4px;
     z-index: 1;
@@ -74,17 +87,18 @@ div.tooltip
     font-size: 11px;
 }
 
-#superimpose
-{
-    position: absolute;
-    z-index: 5;
-    left: 20px;
-    top: 20px;
+.letter {
+    text-anchor: middle;
 }
 
-.legendSvg
-{
-    position: absolute;
-    top: 20px;
-    left: 400px;
+.hover line {
+    fill: none;
+    stroke: black;
+    stroke-width: 2px;
+    opacity: 0.3;
+}
+
+.position {
+    font-family: sans-serif;
+    font-size: 11px;   
 }

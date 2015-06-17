@@ -15,8 +15,8 @@ function drawGraph(graph) {
 
 
   var svg = d3.select("#d3graph").append("svg")
-    .attr("width", this.width)
-    .attr("height", this.height);
+    .attr("width", width)
+    .attr("height", height);
 
   var tooltip = new Tooltip('#d3graph');
 

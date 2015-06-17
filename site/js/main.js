@@ -23,7 +23,7 @@ d3.json("data/graph.json", function(errorJSON, dataJSON) {
 });
 
 
-var sequenceViewer = new SequenceViewer("sequenceViewer", 500, 200, 20);
+var sequenceViewer = new SequenceViewer("sequenceViewer", 500, 100, 20);
 
 sequenceViewer.draw([
   {name: "aaa", sequence: "DSCBSDKVJBADKVBVDLBADKADAKABDKACJBACLBACA"},
