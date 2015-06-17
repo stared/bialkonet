@@ -14,20 +14,9 @@ function SequenceViewer(domId, width, height, margin) {
       that.hoverMove(d3.mouse(this)[0]);
     });
 
-  this.hover = this.svg.append('g')
-    .attr('class', 'hover');
-
-
-  this.hover.append('line')
-    .attr('y1', 0)
-    .attr('y2', this.height);
-
-  this.hover.append('text')
-    .attr('class', 'position')
-    .attr('x', 5)
-    .attr('y', this.height - 1.3 * this.margin);
-
   this.draw = function (data) {
+
+    this.data = data;
 
     var maxL = d3.max(data, function (d) { return d.sequence.length; });
 
@@ -65,17 +54,65 @@ function SequenceViewer(domId, width, height, margin) {
           .append('text')
             .attr('class', 'letter')
             .attr('x', function (d, i) { return scaleX(i); })
-            .style('font-size', 10)
+            .style('font-size', Math.min(20, scaleX(1) - scaleX(0)))
             .text(function (d) { return d; });
+
+    this.hover = this.svg.append('g')
+      .attr('class', 'hover');
+
+
+    this.hover.append('line')
+      .attr('y1', 0)
+      .attr('y2', this.height);
+
+    this.hover.append('text')
+      .attr('class', 'position')
+      .attr('x', 5)
+      .attr('y', this.height - 1.3 * this.margin);
+
+    var hoverAdd = this.hover.selectAll('.loupe')
+      .data(data, function (d) { return d.name; })
+      .enter()
+      .append('g')
+        .attr('class', 'loupe')
+        .attr('transform', function (d, i) {
+          return "translate(" + (-25) + "," + (scaleY(i) - 10) + ")";
+        });
+
+    hoverAdd.append('rect')
+      .attr('width', 50)
+      .attr('height', 15)
+      .style('fill', 'white')
+      .style('stroke', 'black')
+      .style('stroke-width', "0.5px");
+
+    hoverAdd.selectAll('text')
+      .data("     ")
+      .enter()
+      .append('text')
+        .attr('x', function (d, i) { return 10 * i+ 5; })
+        .attr('y', 12)
+        .style('font-size', function (d, i) { return  14 - 2 * Math.abs(i - 2); })
 
   };
 
   this.hoverMove = function (x) {
+
+    var pos = Math.round(this.scaleX.invert(x));
+
     this.hover
       .attr('transform', "translate(" + x  + ",0)");
     
     this.hover.select('.position')
-      .text(Math.round(this.scaleX.invert(x)));
+      .text(pos);
+
+    this.hover.selectAll('.loupe')
+      .data(this.data)
+      .selectAll('text')
+        .data(function (d) {
+          return d.sequence.slice(pos - 2, pos + 3);
+        })
+        .text(function (d) { return d; });
 
   };
 

@@ -102,3 +102,7 @@ div.tooltip
     font-family: sans-serif;
     font-size: 11px;   
 }
+
+.loupe text {
+    text-anchor: middle;
+}
