@@ -50,6 +50,30 @@ div.tooltip
     z-index: 1;
 }
 
+#sequenceViewer
+{
+    position: absolute;
+    top: 500px;
+    left: 740px;
+    width: 500px;
+    height: 200px;
+    border: solid 1px #aaa;
+    border-radius: 4px;
+    z-index: 1;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+}
+
 #superimpose
 {
     position: absolute;
