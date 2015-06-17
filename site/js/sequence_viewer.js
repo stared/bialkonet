@@ -110,9 +110,15 @@ function SequenceViewer(domId, width, height, margin) {
       .data(this.data)
       .selectAll('text')
         .data(function (d) {
-          return d.sequence.slice(pos - 2, pos + 3);
+          var chars = d.sequence.slice(pos - 2, pos + 3);
+          // error thx to JS treating " " like false... :/
+          if (pos < 2) {
+            return _.repeat(" ", 2 - pos) + chars;
+          } else {
+            return _.padRight(chars, 5, "X");
+          }
         })
-        .text(function (d) { return d; });
+          .text(function (d) { return d; });
 
   };
 
