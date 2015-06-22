@@ -89,6 +89,7 @@ div.tooltip
 
 .letter {
     text-anchor: middle;
+    cursor: default;
 }
 
 .hover line {
@@ -105,4 +106,5 @@ div.tooltip
 
 .loupe text {
     text-anchor: middle;
+    cursor: default;
 }

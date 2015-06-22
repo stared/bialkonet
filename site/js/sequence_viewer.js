@@ -26,6 +26,10 @@ function SequenceViewer(domId, width, height, margin) {
 
     this.scaleX = scaleX;
 
+    var dX = function() {
+      return scaleX(1) - scaleX(0);
+    }
+
     var scaleY = d3.scale.linear()
       .domain([-0.5, data.length - 0.5])
       .range([this.margin, this.height - 2 * this.margin]);
@@ -54,12 +58,49 @@ function SequenceViewer(domId, width, height, margin) {
           .append('text')
             .attr('class', 'letter')
             .attr('x', function (d, i) { return scaleX(i); })
-            .style('font-size', Math.min(20, scaleX(1) - scaleX(0)))
+            .style('font-size', Math.min(15, dX()))
             .text(function (d) { return d; });
+
+    //
+    // zoom behaviour
+    //
+
+    var zoom = d3.behavior.zoom()
+      .x(scaleX)
+      .scaleExtent([1, 15/dX()])
+      .on("zoom", zoomed);
+
+    function zoomed() {
+      if (scaleX(0) > that.margin) {
+        zoom.translate([0, 0]);
+      } // else if (scaleX(maxL - 1) < that.width - that.margin - 1) {
+        // zoom.translate([0, 0]); // FIX
+      //}
+
+      that.svg.select(".axis").call(axisX);
+
+      that.svg.selectAll('.sequence')
+        .data(data, function (d) { return d.name; })
+          .selectAll('.letter')
+          .data(function(d) { return d.sequence; })
+            .attr('x', function (d, i) { return scaleX(i); })
+            .style('font-size', Math.min(15, dX()));
+
+      that.hover.style("opacity", dX() > 10 ? 0 : null);
+
+
+      // console.log("scaleX(0)", scaleX(0)); 
+      // console.log("scaleX(maxL - 1)", scaleX(maxL - 1)); 
+    }
+
+    this.svg.call(zoom);
+
+    //
+    // hover
+    //
 
     this.hover = this.svg.append('g')
       .attr('class', 'hover');
-
 
     this.hover.append('line')
       .attr('y1', 0)
@@ -98,6 +139,13 @@ function SequenceViewer(domId, width, height, margin) {
 
   this.hoverMove = function (x) {
 
+    // if ((this.scaleX(1) - this.scaleX(0)) > 10) {
+    //   this.hover.style("opacity", 0);
+    //   return;
+    // } else {
+    //   this.hover.style("opacity", null);
+    // }
+
     var pos = Math.round(this.scaleX.invert(x));
 
     this.hover
@@ -113,9 +161,9 @@ function SequenceViewer(domId, width, height, margin) {
           var chars = d.sequence.slice(pos - 2, pos + 3);
           // error thx to JS treating " " like false... :/
           if (pos < 2) {
-            return _.repeat(" ", 2 - pos) + chars;
+            return _.repeat("-", 2 - pos) + chars;
           } else {
-            return _.padRight(chars, 5, "X");
+            return _.padRight(chars, 6, "-");
           }
         })
           .text(function (d) { return d; });
