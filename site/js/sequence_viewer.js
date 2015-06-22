@@ -72,10 +72,10 @@ function SequenceViewer(domId, width, height, margin) {
 
     function zoomed() {
       if (scaleX(0) > that.margin) {
-        zoom.translate([0, 0]);
-      } // else if (scaleX(maxL - 1) < that.width - that.margin - 1) {
-        // zoom.translate([0, 0]); // FIX
-      //}
+        zoom.translate([that.margin * (1 - zoom.scale()), 0]);
+      } else if (scaleX(maxL - 1) < that.width - that.margin) {
+        zoom.translate([(that.width - that.margin) * (1 - zoom.scale()), 0]);
+      }
 
       that.svg.select(".axis").call(axisX);
 
@@ -87,10 +87,6 @@ function SequenceViewer(domId, width, height, margin) {
             .style('font-size', Math.min(15, dX()));
 
       that.hover.style("opacity", dX() > 10 ? 0 : null);
-
-
-      // console.log("scaleX(0)", scaleX(0)); 
-      // console.log("scaleX(maxL - 1)", scaleX(maxL - 1)); 
     }
 
     this.svg.call(zoom);
@@ -100,7 +96,8 @@ function SequenceViewer(domId, width, height, margin) {
     //
 
     this.hover = this.svg.append('g')
-      .attr('class', 'hover');
+      .attr('class', 'hover')
+      .attr('transform', "translate(-100,0)");
 
     this.hover.append('line')
       .attr('y1', 0)
