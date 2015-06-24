@@ -108,3 +108,9 @@ div.tooltip
     text-anchor: middle;
     cursor: default;
 }
+
+.blinking {
+    fill: none;
+    stroke: red;
+    stroke-width: 4px;
+}

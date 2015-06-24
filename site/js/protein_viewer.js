@@ -14,6 +14,17 @@ function ProteinViewer(domId) {
     slabMode: 'auto'
   });
 
+  this.onClickingAtom = function (callback) {
+    viewer.on('click', function(picked) {
+      // strange... this is fired twice, once with callback, once without it
+      if (callback === undefined) return;
+      if (picked === null) return;
+      callback(picked.object().atom.index());
+    });
+  };
+
+  this.onClickingAtom();
+
   this.colorNameList = [];
 
   this.proteinLegend = new proteinLegend(domId);

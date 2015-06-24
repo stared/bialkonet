@@ -14,6 +14,10 @@ function SequenceViewer(domId, width, height, margin) {
       that.hoverMove(d3.mouse(this)[0]);
     });
 
+  this.onZoom = function (from, to) {
+    return;
+  };
+
   this.draw = function (data) {
 
     this.data = data;
@@ -87,6 +91,8 @@ function SequenceViewer(domId, width, height, margin) {
             .style('font-size', Math.min(15, dX()));
 
       that.hover.style("opacity", dX() > 10 ? 0 : null);
+
+      that.onZoom(scaleX.invert(that.margin), scaleX.invert(that.width - that.margin));
     }
 
     this.svg.call(zoom);
@@ -132,16 +138,19 @@ function SequenceViewer(domId, width, height, margin) {
         .attr('y', 12)
         .style('font-size', function (d, i) { return  14 - 2 * Math.abs(i - 2); })
 
+    //
+    // blink
+    //
+
+    this.blinker = this.svg.append('line')
+      .attr('class', 'blinking')
+      .attr('y1', 0)
+      .attr('y2', this.height)
+      .style('opacity', 0);
+
   };
 
   this.hoverMove = function (x) {
-
-    // if ((this.scaleX(1) - this.scaleX(0)) > 10) {
-    //   this.hover.style("opacity", 0);
-    //   return;
-    // } else {
-    //   this.hover.style("opacity", null);
-    // }
 
     var pos = Math.round(this.scaleX.invert(x));
 
@@ -164,6 +173,16 @@ function SequenceViewer(domId, width, height, margin) {
           }
         })
           .text(function (d) { return d; });
+
+  };
+
+  this.blinkAt = function (pos) {
+
+    this.blinker
+      .attr('transform', "translate(" + this.scaleX(pos) + ",0)")
+      .style('opacity', 0.75)
+      .transition().duration(2000)
+        .style('opacity', 0);
 
   };
 
