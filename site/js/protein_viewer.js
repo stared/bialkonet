@@ -66,6 +66,24 @@ function ProteinViewer(domId) {
 
   }
 
+  function highlightFromToOp(start, end) {
+    return new pv.color.ColorOp(function(atom, out, index) {
+      if ((start == null || atom.index() >= start) &&
+          (end == null || atom.index() <= end)) {
+        out[index+3] = 1.0; // A
+      } else {
+        out[index+3] = 0.3; // A
+      }
+    });
+  }
+
+  this.highlightFromTo = function(from, to) {
+    viewer.forEach(function(go) {
+      go.colorBy(highlightFromToOp(from, to));
+    });
+    viewer.requestRedraw();
+  }
+
 }
 
 
@@ -77,8 +95,6 @@ function proteinLegend (domId) {
     .attr('height', 150);
 
   this.update = function (colorNameList) {
-
-    console.log('colorNameList', colorNameList);
 
     var boxes = this.svg.selectAll('.box')
       .data(colorNameList);
