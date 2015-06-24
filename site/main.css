@@ -58,6 +58,14 @@ div.tooltip
     top: 20px;
 }
 
+#structureStyle
+{
+    position: absolute;
+    z-index: 5;
+    left: 150px;
+    top: 20px;
+}
+
 .legendSvg
 {
     position: absolute;

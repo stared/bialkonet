@@ -49,11 +49,42 @@ function ProteinViewer(domId) {
     .attr('value', "change")
     .text("change");
 
+  this.structureStyle = viewer.cartoon;
+
+  var structureStylesStr = ["cartoon", "points", "lines", "lineTrace", "spheres", "sline", "tube", "trace", "ballsAndSticks"];
+  var strToStyleFunction = {
+    "cartoon": viewer.cartoon,
+    "points": viewer.points,
+    "lines": viewer.lines,
+    "lineTrace": viewer.lineTrace,
+    "spheres": viewer.spheres,
+    "sline": viewer.sline,
+    "tube": viewer.tube,
+    "trace": viewer.trace,
+    "ballsAndSticks": viewer.ballsAndSticks,
+  };
+
+  var styleSelect = d3.select("#" + domId).append('select')
+    .attr('id', 'structureStyle')
+    .on('change', function (x, y) {
+      console.log("d3.select(this).node().value", d3.select(this).node().value);
+      that.structureStyle = strToStyleFunction[d3.select(this).node().value];
+    });
+
+  styleSelect.selectAll('option')
+    .data(structureStylesStr)
+      .enter()
+      .append('option')
+        .attr("value", function (d) { return d; })
+        .text(function (d) { return d; })
+
+  //
+  // functions
+  //
 
   this.load = function(name, pdbPath) {
 
     pv.io.fetchPdb(pdbPath, function(structure) {
-
       
       if (!that.superimpose) {
         viewer.clear();
@@ -63,7 +94,7 @@ function ProteinViewer(domId) {
       var color = colors(that.colorNameList.length);
       that.colorNameList.push({name: name, color: color});
 
-      var go = viewer.cartoon('structure', structure, {
+      var go = that.structureStyle.bind(viewer)('structure', structure, {
         color: pv.color.uniform(color)
       });
 
