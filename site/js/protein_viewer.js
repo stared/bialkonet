@@ -175,3 +175,49 @@ function proteinLegend (domId) {
 
 
 }
+
+// I schemat
+
+// K Lys czerwony
+// R Arg czerwony
+// A Ala niebieski
+// F Phe niebieski
+// I Ile niebieski
+// L Leu niebieski
+// M Met niebieski
+// V Val niebieski
+// W Trp niebieski
+// N Asn zielony
+// Q Gln zielony
+// S Ser zielony
+// T Thr zielony
+// H His błękitny
+// Y Tyr błękitny
+// C Cys różowy
+// D Asp fiolet
+// E Glu fiolet
+// P Pro żółty
+// G Gly pomarańczowy
+
+// II schemat
+
+// K Lys szary
+// R Arg szary
+// A Ala żółty
+// F Phe żółty
+// I Ile żółty
+// L Leu żółty
+// M Met żółty
+// V Val żółty
+// W Trp żółty
+// N Asn żółty
+// Q Gln żółty
+// S Ser zółty
+// T Thr żółty
+// H His szary
+// Y Tyr żółty
+// C Cys żółty
+// D Asp szary
+// E Glu szary
+// P Pro żółty
+// G Gly żółty
