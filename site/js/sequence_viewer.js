@@ -18,6 +18,13 @@ function SequenceViewer(domId, width, height, margin) {
     return;
   };
 
+  this.data = [];
+
+  this.load = function (p_id, sequence) {
+    this.data.push({name: p_id, sequence: sequence});
+    this.draw(this.data);
+  };
+
   this.draw = function (data) {
 
     this.data = data;
@@ -48,22 +55,26 @@ function SequenceViewer(domId, width, height, margin) {
       .attr('transform', "translate(0," + (this.height - this.margin) + ")")
       .call(axisX);
 
-    this.svg.selectAll('.sequence')
-      .data(data, function (d) { return d.name; })
+    var sequences = this.svg.selectAll('.sequence')
+      .data(data, function (d) { return d.name; });
+
+    sequences
       .enter()
       .append('g')
-        .attr('class', 'sequence')
-        .attr('transform', function (d, i) {
-          return "translate(0," + scaleY(i) + ")";
-        })
-        .selectAll('.letter')
-          .data(function(d) { return d.sequence; })
-          .enter()
-          .append('text')
-            .attr('class', 'letter')
-            .attr('x', function (d, i) { return scaleX(i); })
-            .style('font-size', Math.min(15, dX()))
-            .text(function (d) { return d; });
+        .attr('class', 'sequence');
+
+    sequences
+      .attr('transform', function (d, i) {
+        return "translate(0," + scaleY(i) + ")";
+      })
+      .selectAll('.letter')
+        .data(function(d) { return d.sequence; })
+        .enter()
+        .append('text')
+          .attr('class', 'letter')
+          .attr('x', function (d, i) { return scaleX(i); })
+          .style('font-size', Math.min(15, dX()))
+          .text(function (d) { return d; });
 
     //
     // zoom behaviour
