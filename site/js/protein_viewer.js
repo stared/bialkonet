@@ -19,7 +19,8 @@ function ProteinViewer(domId) {
       // strange... this is fired twice, once with callback, once without it
       if (callback === undefined) return;
       if (picked === null) return;
-      callback(picked.object().atom.index());
+      console.log("picked.object().residue().index()", picked.object().residue().index());
+      callback(picked.object().residue().index());
     });
   };
 
@@ -108,10 +109,11 @@ function ProteinViewer(domId) {
 
   }
 
+  // by residue index, not - atom index
   function highlightFromToOp(start, end) {
     return new pv.color.ColorOp(function(atom, out, index) {
-      if ((start == null || atom.index() >= start) &&
-          (end == null || atom.index() <= end)) {
+      if ((start == null || atom.residue().index() >= start) &&
+          (end == null || atom.residue().index() <= end)) {
         out[index+3] = 1.0; // A
       } else {
         out[index+3] = 0.3; // A

@@ -41,7 +41,9 @@ function drawGraph(graph) {
       .on('click', function (d) {
         console.log("clicked on data: ", d);
         proteinViewer.load(d.p_id, ["pdb/", d.p_id, "_chA_local.pdb"].join(""));
-        sequenceViewer.load(d.p_id, d.sequence);
+
+        // WARNING: temporary workaround with regex to make zooming working;
+        sequenceViewer.load(d.p_id, d.sequence.replace(/-/g, ""));
       });
 
   force.on("tick", function() {
