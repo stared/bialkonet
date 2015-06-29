@@ -14,6 +14,14 @@ function SequenceViewer(domId, width, height, margin) {
       that.hoverMove(d3.mouse(this)[0]);
     });
 
+  this.scaleX = d3.scale.linear()
+    .range([this.margin, this.width - this.margin]);
+
+  this.axisXLegend = this.svg.append('g')
+    .attr('class', 'axis')
+    .attr('transform', "translate(0," + (this.height - this.margin) + ")");
+
+  // does nothing. but can be reassigned 
   this.onZoom = function (from, to) {
     return;
   };
@@ -27,16 +35,15 @@ function SequenceViewer(domId, width, height, margin) {
 
   this.draw = function (data) {
 
+    // in case draw is called directly
     this.data = data;
 
     var maxL = d3.max(data, function (d) { return d.sequence.length; });
 
-    var scaleX = d3.scale.linear()
-      .domain([0, maxL - 1])
-      .range([this.margin, this.width - this.margin]);
+    this.scaleX = this.scaleX.domain([0, maxL - 1]);
+    var scaleX = this.scaleX;
 
-    this.scaleX = scaleX;
-
+    // TODO
     var dX = function() {
       return scaleX(1) - scaleX(0);
     }
@@ -50,9 +57,7 @@ function SequenceViewer(domId, width, height, margin) {
       .orient('bottom')
       .tickSize(6, 0);
 
-    this.svg.append('g')
-      .attr('class', 'axis')
-      .attr('transform', "translate(0," + (this.height - this.margin) + ")")
+    this.axisXLegend
       .call(axisX);
 
     var sequences = this.svg.selectAll('.sequence')
