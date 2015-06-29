@@ -7,12 +7,20 @@ function SequenceViewer(domId, width, height, margin) {
   this.height = height;
   this.margin = margin;
 
+  this.data = [];
+
+  // init svg
+
   this.svg = d3.select('#' + domId).append('svg')
     .attr('width', width)
     .attr('height', height)
     .on('mousemove', function () {
       that.hoverMove(d3.mouse(this)[0]);
     });
+
+  this.g = this.svg.append("g");
+
+  // init scaleX
 
   this.scaleX = d3.scale.linear()
     .range([this.margin, this.width - this.margin]);
@@ -21,12 +29,37 @@ function SequenceViewer(domId, width, height, margin) {
     .attr('class', 'axis')
     .attr('transform', "translate(0," + (this.height - this.margin) + ")");
 
+  // init hover
+
+  this.hover = this.svg.append('g')
+    .attr('class', 'hover')
+    .attr('transform', "translate(-100,0)");
+
+  this.hover.append('line')
+    .attr('y1', 0)
+    .attr('y2', this.height);
+
+  this.hover.append('text')
+    .attr('class', 'position')
+    .attr('x', 5)
+    .attr('y', this.height - 1.3 * this.margin);
+
+  // init blinking stripe
+
+  this.blinker = this.svg.append('line')
+    .attr('class', 'blinking')
+    .attr('y1', 0)
+    .attr('y2', this.height)
+    .style('opacity', 0);
+
+  //
+  // functions
+  //
+
   // does nothing. but can be reassigned 
   this.onZoom = function (from, to) {
     return;
   };
-
-  this.data = [];
 
   this.load = function (p_id, sequence) {
     this.data.push({name: p_id, sequence: sequence});
@@ -38,29 +71,40 @@ function SequenceViewer(domId, width, height, margin) {
     // in case draw is called directly
     this.data = data;
 
+    // WARNING: as it is right now it might not work for changing domain length
     var maxL = d3.max(data, function (d) { return d.sequence.length; });
 
-    this.scaleX = this.scaleX.domain([0, maxL - 1]);
-    var scaleX = this.scaleX;
-
-    // TODO
     var dX = function() {
-      return scaleX(1) - scaleX(0);
+      return that.scaleX(1) - that.scaleX(0);
+    }
+
+
+    if (data.length === 1) {
+      this.scaleX = this.scaleX.domain([0, maxL - 1]);
+
+      var axisX = d3.svg.axis()
+        .scale(that.scaleX)
+        .orient('bottom')
+        .tickSize(6, 0);
+
+      this.axisXLegend
+        .call(axisX);
+
+      var zoom = d3.behavior.zoom()
+        .x(that.scaleX)
+        .scaleExtent([1, 15/dX()])
+        .on("zoom", zoomed);
+
+      this.svg.call(zoom);
+
     }
 
     var scaleY = d3.scale.linear()
       .domain([-0.5, data.length - 0.5])
-      .range([this.margin, this.height - 2 * this.margin]);
+      .range([0.7 * this.margin, this.height - 1.3 * this.margin]);
 
-    var axisX = d3.svg.axis()
-      .scale(scaleX)
-      .orient('bottom')
-      .tickSize(6, 0);
 
-    this.axisXLegend
-      .call(axisX);
-
-    var sequences = this.svg.selectAll('.sequence')
+    var sequences = this.g.selectAll('.sequence')
       .data(data, function (d) { return d.name; });
 
     sequences
@@ -77,7 +121,7 @@ function SequenceViewer(domId, width, height, margin) {
         .enter()
         .append('text')
           .attr('class', 'letter')
-          .attr('x', function (d, i) { return scaleX(i); })
+          .attr('x', function (d, i) { return that.scaleX(i); })
           .style('font-size', Math.min(15, dX()))
           .text(function (d) { return d; });
 
@@ -85,15 +129,10 @@ function SequenceViewer(domId, width, height, margin) {
     // zoom behaviour
     //
 
-    var zoom = d3.behavior.zoom()
-      .x(scaleX)
-      .scaleExtent([1, 15/dX()])
-      .on("zoom", zoomed);
-
     function zoomed() {
-      if (scaleX(0) > that.margin) {
+      if (that.scaleX(0) > that.margin) {
         zoom.translate([that.margin * (1 - zoom.scale()), 0]);
-      } else if (scaleX(maxL - 1) < that.width - that.margin) {
+      } else if (that.scaleX(maxL - 1) < that.width - that.margin) {
         zoom.translate([(that.width - that.margin) * (1 - zoom.scale()), 0]);
       }
 
@@ -103,41 +142,31 @@ function SequenceViewer(domId, width, height, margin) {
         .data(data, function (d) { return d.name; })
           .selectAll('.letter')
           .data(function(d) { return d.sequence; })
-            .attr('x', function (d, i) { return scaleX(i); })
+            .attr('x', function (d, i) { return that.scaleX(i); })
             .style('font-size', Math.min(15, dX()));
 
       that.hover.style("opacity", dX() > 10 ? 0 : null);
 
-      that.onZoom(scaleX.invert(that.margin), scaleX.invert(that.width - that.margin));
+      that.onZoom(that.scaleX.invert(that.margin), that.scaleX.invert(that.width - that.margin));
     }
 
-    this.svg.call(zoom);
-
     //
-    // hover
+    // update hover
     //
 
-    this.hover = this.svg.append('g')
-      .attr('class', 'hover')
-      .attr('transform', "translate(-100,0)");
+    this.hover.style("opacity", 0);
 
-    this.hover.append('line')
-      .attr('y1', 0)
-      .attr('y2', this.height);
+    var hover = this.hover.selectAll('.loupe')
+      .data(data, function (d) { return d.name; });
 
-    this.hover.append('text')
-      .attr('class', 'position')
-      .attr('x', 5)
-      .attr('y', this.height - 1.3 * this.margin);
-
-    var hoverAdd = this.hover.selectAll('.loupe')
-      .data(data, function (d) { return d.name; })
-      .enter()
+    var hoverAdd = hover.enter()
       .append('g')
         .attr('class', 'loupe')
-        .attr('transform', function (d, i) {
-          return "translate(" + (-25) + "," + (scaleY(i) - 10) + ")";
-        });
+
+    hover
+      .attr('transform', function (d, i) {
+        return "translate(" + (-25) + "," + (scaleY(i) - 10) + ")";
+      });
 
     hoverAdd.append('rect')
       .attr('width', 50)
@@ -150,19 +179,9 @@ function SequenceViewer(domId, width, height, margin) {
       .data("     ")
       .enter()
       .append('text')
-        .attr('x', function (d, i) { return 10 * i+ 5; })
+        .attr('x', function (d, i) { return 10 * i + 5; })
         .attr('y', 12)
         .style('font-size', function (d, i) { return  14 - 2 * Math.abs(i - 2); })
-
-    //
-    // blink
-    //
-
-    this.blinker = this.svg.append('line')
-      .attr('class', 'blinking')
-      .attr('y1', 0)
-      .attr('y2', this.height)
-      .style('opacity', 0);
 
   };
 
