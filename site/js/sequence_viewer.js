@@ -61,8 +61,13 @@ function SequenceViewer(domId, width, height, margin) {
     return;
   };
 
-  this.load = function (p_id, sequence) {
-    this.data.push({name: p_id, sequence: sequence});
+  this.load = function (p_id, sequence, superimpose) {
+    var datum = {name: p_id, sequence: sequence};
+    if (superimpose) {
+      this.data.push(datum);
+    } else {
+      this.data = [datum];
+    }
     this.draw(this.data);
   };
 
@@ -107,8 +112,7 @@ function SequenceViewer(domId, width, height, margin) {
     var sequences = this.g.selectAll('.sequence')
       .data(data, function (d) { return d.name; });
 
-    sequences
-      .enter()
+    sequences.enter()
       .append('g')
         .attr('class', 'sequence');
 
@@ -124,6 +128,9 @@ function SequenceViewer(domId, width, height, margin) {
           .attr('x', function (d, i) { return that.scaleX(i); })
           .style('font-size', Math.min(15, dX()))
           .text(function (d) { return d; });
+
+    sequences.exit()
+      .remove();
 
     //
     // zoom behaviour
@@ -167,6 +174,9 @@ function SequenceViewer(domId, width, height, margin) {
       .attr('transform', function (d, i) {
         return "translate(" + (-25) + "," + (scaleY(i) - 10) + ")";
       });
+
+    hover.exit()
+      .remove();
 
     hoverAdd.append('rect')
       .attr('width', 50)
