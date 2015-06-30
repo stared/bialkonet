@@ -14,13 +14,13 @@ function ProteinViewer(domId) {
     slabMode: 'auto'
   });
 
+  // change it to mouseover?
   this.onClickingAtom = function (callback) {
     viewer.on('click', function(picked) {
       // strange... this is fired twice, once with callback, once without it
       if (callback === undefined) return;
       if (picked === null) return;
-      console.log("picked.object().residue().index()", picked.object().residue().index());
-      callback(picked.object().residue().index());
+      callback(picked.object().atom.residue().index());
     });
   };
 
