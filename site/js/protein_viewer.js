@@ -52,7 +52,10 @@ function ProteinViewer(domId) {
 
   this.structureStyle = viewer.cartoon;
 
-  var structureStylesStr = ["cartoon", "points", "lines", "lineTrace", "spheres", "sline", "tube", "trace", "ballsAndSticks"];
+  //// some of them make no sense or are buggy with changing opacity, so I commented it
+  // var structureStylesStr = ["cartoon", "points", "lines", "lineTrace", "spheres", "sline", "tube", "trace", "ballsAndSticks"];
+  var structureStylesStr = ["cartoon", "lineTrace", "sline", "tube", "trace"];
+
   var strToStyleFunction = {
     "cartoon": viewer.cartoon,
     "points": viewer.points,
