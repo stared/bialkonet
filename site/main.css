@@ -15,6 +15,12 @@
     cursor: default;
 }
 
+.box
+{
+    stroke: #fff;
+    stroke-width: 1.5px;
+}
+
 div.tooltip
 {
     position: absolute;

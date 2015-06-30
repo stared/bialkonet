@@ -173,12 +173,12 @@ function Legend (parentDom, node) {
         .attr('height', 10)
         .style('fill', function (d) { return d.color; })
         .on('mouseover', function (d) {
-          node.style('opacity', function (c) {
-            return c[field] == d.name ? 1 : 0.1;
+          node.style('stroke', function (c) {
+            return c[field] == d.name ? "black" : null;
           })
         })
         .on('mouseout', function (d) {
-          node.style('opacity', null);
+          node.style('stroke', null);
         });
 
     labels.data(nameColorList)
@@ -189,12 +189,12 @@ function Legend (parentDom, node) {
         .attr('y', function (d, i) { return 15 * i + 10; })
         .text(function (d) { return d.name; })
         .on('mouseover', function (d) {
-          node.style('opacity', function (c) {
-            return c[field] == d.name ? 1 : 0.1;
+          node.style('stroke', function (c) {
+            return c[field] == d.name ? "black" : null;
           })
         })
         .on('mouseout', function (d) {
-          node.style('opacity', null);
+          node.style('stroke', null);
         });
 
   };
