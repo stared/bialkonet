@@ -14,12 +14,7 @@ d3.json("data/graph.json", function(errorJSON, dataJSON) {
     dataJSON.nodes = dataJSON.nodes
       .map(function(d) {
         return _.assign(d, additionalData[d.p_id]);
-      })
-      .map(function (d) {
-        return _.assign(d, {maintype: d.subtype ? d.subtype.split("N")[0] : undefined})
       });
-
-
 
     drawGraph(dataJSON);
 
