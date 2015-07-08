@@ -27,6 +27,8 @@ function drawGraph(graph) {
       })
       .start();
 
+  var drag = force.drag();
+
   var node = svg.selectAll(".node")
       .data(graph.nodes)
       .enter().append("circle")
@@ -43,7 +45,8 @@ function drawGraph(graph) {
         proteinViewer.load(d.p_id, ["pdb/crystals/", d.p_id, "_chA.pdb"].join(""));
         // WARNING: temporary workaround with regex to make zooming working;
         sequenceViewer.load(d.p_id, d.sequence.replace(/-/g, ""), proteinViewer.superimpose);
-      });
+      })
+      .call(drag);
 
   force.on("tick", function() {
       node.attr("cx", function(d) { return d.x; })
