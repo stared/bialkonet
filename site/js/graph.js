@@ -160,16 +160,16 @@ function Legend (parentDom, node) {
 
   this.update = function (nameColorList, field) {
     
-    this.g.selectAll('.box').remove();
-    this.g.selectAll('.label').remove();
+    this.g.selectAll('.legend-box').remove();
+    this.g.selectAll('.legend-label').remove();
 
-    var boxes = this.g.selectAll('.box');
-    var labels = this.g.selectAll('.label');
+    var boxes = this.g.selectAll('.legend-box');
+    var labels = this.g.selectAll('.legend-label');
 
     boxes.data(nameColorList)
       .enter()
       .append('rect')
-        .attr('class', 'box')
+        .attr('class', 'legend-box')
         .attr('x', 0)
         .attr('y', function (d, i) { return 15 * i; })
         .attr('width', 10)
@@ -187,7 +187,7 @@ function Legend (parentDom, node) {
     labels.data(nameColorList)
       .enter()
       .append('text')
-        .attr('class', 'label')
+        .attr('class', 'legend-label')
         .attr('x', 15)
         .attr('y', function (d, i) { return 15 * i + 10; })
         .text(function (d) { return d.name; })
