@@ -13,6 +13,10 @@
     <link href="lib/bootstrap.min.css" rel="stylesheet">
     <link href="lib/sticky-footer-navbar.css" rel="stylesheet">
 
+    <script src="lib/d3.v3.min.js" charset="utf-8"></script>
+    <script src="lib/lodash.min.js" charset="utf-8"></script>
+    <script src="js/search.js" charset="utf-8"></script>
+
   </head>
 
   <body>
@@ -36,7 +40,21 @@
     <div class="container">
 
       <p class="lead">Search influenza proteins</p>
-      <p>(There will be a search.)</p>
+      <p>Search data (for now - crystal data)</p>
+      <input id="search" type="text" class="form-control" placeholder="For example: H3 avian">
+      <span id="foundCount"></span>
+
+      <table class="table table-condensed" id="resultTable">
+        <thead>
+          <th>Id</th>
+          <th>Serotype</th>
+          <th>Host</th>
+          <th>Location</th>
+          <th>Year</th>
+        </thead>
+        <tbody></tbody>
+      </table>
+
     </div>
 
     <footer class="footer">
