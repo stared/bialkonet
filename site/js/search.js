@@ -11,11 +11,21 @@ d3.csv("data/crystals_metadata.csv", function(errorCSV, dataCSV) {
   var table = dataCSV.map(rowTemplate).join("\n");
   d3.select("#resultTable tbody").html(table);
   d3.select("#search").on("input", function () {
-    var strings = this.value.split(" ");
+    // test http://jsperf.com/regexp-vs-indexof
+    var hx = /H[x\d]+N[x\d]+/;
+    var regexes = this.value
+      .split(" ")
+      .map(function (s) {
+        if (hx.test(s)) {
+          return new RegExp(s.replace(/x/g, "\\d+"));
+        } else {
+          return new RegExp(s);
+        }
+      });
     var dataF;
     if (this.value.length > 1) {
       dataF = dataCSV.filter(function (d) {
-        return _.every(strings, function (s) { return d.search.indexOf(s) !== -1; });
+        return _.every(regexes, function (re) { return re.test(d.search); });
       })
     } else {
       dataF = dataCSV;
