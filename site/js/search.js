@@ -1,4 +1,7 @@
-var rowTemplate = _.template("<tr><td><%= id %></td><td><%= subtype %></td><td><%= host %></td><td><%= location %></td><td><%= year %></td></tr>");
+var rowTemplate = _.template("<tr><td><%= id %></td><td><%= subtype %></td><td><%= host %></td><td><%= location %></td><td><%= year %></td>"
+                             + "<td><a href='pdb/crystals/<%= id %>_chA.pdb'>pdb</a> <a href='dx/<%= id %>.ds'>dx</a> <a href='fas/<%= id %>.fas'>fas</a></td></tr>");
+// tied to crystal
+// I should have did it in ES6 io use a better tamplating
 
 d3.csv("data/crystals_metadata.csv", function(errorCSV, dataCSV) {
   console.log("dataCSV", dataCSV);
