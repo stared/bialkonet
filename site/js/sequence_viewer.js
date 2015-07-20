@@ -197,6 +197,10 @@ function SequenceViewer(domId, width, height, margin) {
 
   this.hoverMove = function (x) {
 
+    if (this.data.length === 0) {
+      return;
+    }
+
     var pos = Math.round(this.scaleX.invert(x));
 
     this.hover
