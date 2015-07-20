@@ -41,7 +41,10 @@ function drawGraph(graph) {
         tooltip.out();
       })
       .on('click', function (d) {
-        console.log("clicked on data: ", d);
+        // we don't want duplicates
+        if (_.includes(_.pluck(proteinViewer.colorNameList, 'name'), d.p_id)) {
+          return;
+        }
         proteinViewer.load(d.p_id, ["pdb/crystals/", d.p_id, "_chA.pdb"].join(""));
         // WARNING: temporary workaround with regex to make zooming working;
         sequenceViewer.load(d.p_id, d.sequence.replace(/-/g, ""), proteinViewer.superimpose);
