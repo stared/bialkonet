@@ -44,6 +44,9 @@
       <input id="search" type="text" class="form-control" placeholder="For example: H3 avian">
       <span id="foundCount"></span>
 
+      
+      
+
       <table class="table table-condensed" id="resultTable">
         <thead>
           <th>Id</th>
@@ -53,7 +56,20 @@
           <th>Year</th>
           <th>Download</th>
         </thead>
-        <tbody></tbody>
+        <tbody><script id="tableContent" type="text/template">
+          <tr>
+            <td><%= id %></td>
+            <td><%= subtype %></td>
+            <td><%= host %></td>
+            <td><%= location %></td><td>
+            <%= year %></td>
+            <td>
+              <a href='pdb/crystals/<%= id %>_chA.pdb'>pdb</a>
+              <a href='dx/<%= id %>.ds'>dx</a>
+              <a href='fas/<%= id %>.fas'>fas</a>
+            </td>
+          </tr>
+        </script></tbody>
       </table>
 
     </div>

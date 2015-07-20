@@ -1,9 +1,8 @@
-var rowTemplate = _.template("<tr><td><%= id %></td><td><%= subtype %></td><td><%= host %></td><td><%= location %></td><td><%= year %></td>"
-                             + "<td><a href='pdb/crystals/<%= id %>_chA.pdb'>pdb</a> <a href='dx/<%= id %>.ds'>dx</a> <a href='fas/<%= id %>.fas'>fas</a></td></tr>");
-// tied to crystal
-// I should have did it in ES6 io use a better tamplating
-
 d3.csv("data/crystals_metadata.csv", function(errorCSV, dataCSV) {
+
+  // or some other on-load
+  var rowTemplate = _.template(d3.select("#tableContent").html());
+
   console.log("dataCSV", dataCSV);
   dataCSV.forEach(function (d) {
     d.search = [d.id, d.subtype, d.host, d.location, d.year].join(" ");
