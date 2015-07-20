@@ -1,6 +1,6 @@
 var proteinViewer = new ProteinViewer('structureViewer');
 
-var sequenceViewer = new SequenceViewer("sequenceViewer", 500, 100, 20);
+var sequenceViewer = new SequenceViewer("sequenceViewer", 500, 300, 20);
 
 proteinViewer.onClickingAtom(sequenceViewer.blinkAt.bind(sequenceViewer));
 sequenceViewer.onZoom = proteinViewer.highlightFromTo;
