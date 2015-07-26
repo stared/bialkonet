@@ -1,11 +1,23 @@
-d3.csv("data/crystals_metadata.csv", function(errorCSV, dataCSV) {
+d3.csv("data/crystals_metadata.csv", function(errorCSVcrystals, dataCSVcrystals) {
+  d3.csv("data/models_metadata.csv", function(errorCSVmodels, dataCSVmodels) {
+
+  dataCSVcrystals.forEach(function (d) {
+    d.database = "crystal";
+    d.template_id = "";
+  });
+
+  dataCSVmodels.forEach(function (d) {
+    d.database = "model";
+    d.id = d.p_id;
+  });
+
+  var dataCSV = dataCSVcrystals.concat(dataCSVmodels);
 
   // or some other on-load
   var rowTemplate = _.template(d3.select("#tableContent").html());
 
-  console.log("dataCSV", dataCSV);
   dataCSV.forEach(function (d) {
-    d.search = [d.id, d.subtype, d.host, d.location, d.year].join(" ");
+    d.search = [d.id, d.template_id, d.database, d.subtype, d.host, d.location, d.year].join(" ");
   });
   var table = dataCSV.map(rowTemplate).join("\n");
   d3.select("#resultTable tbody").html(table);
@@ -33,4 +45,6 @@ d3.csv("data/crystals_metadata.csv", function(errorCSV, dataCSV) {
     var table = dataF.map(rowTemplate).join("\n");
     d3.select("#resultTable tbody").html(table);
   });
+
+});
 });

@@ -54,6 +54,8 @@
           <th>Host</th>
           <th>Location</th>
           <th>Year</th>
+          <th>Template</th>
+          <th>Database</th>
           <th>Download</th>
         </thead>
         <tbody><script id="tableContent" type="text/template">
@@ -63,6 +65,8 @@
             <td><%= host %></td>
             <td><%= location %></td><td>
             <%= year %></td>
+            <td><%= template_id %></td>
+            <td><%= database %></td>
             <td>
               <a href='pdb/crystals/<%= id %>_chA.pdb'>pdb</a>
               <a href='dx/<%= id %>.ds'>dx</a>
