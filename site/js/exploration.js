@@ -5,6 +5,7 @@ var sequenceViewer = new SequenceViewer("sequenceViewer", 500, 300, 20);
 proteinViewer.onClickingAtom(sequenceViewer.blinkAt.bind(sequenceViewer));
 sequenceViewer.onZoom = proteinViewer.highlightFromTo;
 
+// proteinViewer.load("AAA92280_ss.pdb", ["testowanie/AAA92280_ss.pdb"].join(""));
 
 // in future, data should be joined beforehand
 d3.json("data/graph.json", function(errorJSON, dataJSON) {
