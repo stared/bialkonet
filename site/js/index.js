@@ -51,7 +51,7 @@ function drawSeroGraph(graph) {
     .attr("width", width)
     .attr("height", height);
 
-  var tooltip = new Tooltip('#serograph');
+  var tooltip = new Tooltip('body');
 
   force.nodes(graph.nodes)
       .links(graph.links)
