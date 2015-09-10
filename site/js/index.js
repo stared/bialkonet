@@ -35,7 +35,7 @@ d3.csv("data/subtype_rmsd_distance_models.csv", function (error, data) {
 
 function drawSeroGraph(graph) {
 
-  var color = d3.scale.category20();
+  var color = d3.scale.category10();
 
   var width = 600,
       height = 400;
