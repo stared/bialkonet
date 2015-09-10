@@ -1,8 +1,14 @@
-d3.csv("data/sero_distances.csv", function (error, data) {
+d3.csv("data/subtype_rmsd_distance_models.csv", function (error, data) {
 
   var nodeNames = _.uniq(_.pluck(data, 'p_id').concat(_.pluck(data, 'p_id2')));
 
-  var nodes = nodeNames.map(function (x) { return {name: x}; });
+  var nodes = nodeNames.map(function (x) {
+    var h = parseInt(x.split("N")[0].substr(1));
+    return {
+      name: x,
+      h: h,
+    };
+  });
 
   var nodeId = _.zipObject(nodeNames.map(function (x, i) { return [x, i]; }));
 
@@ -15,6 +21,12 @@ d3.csv("data/sero_distances.csv", function (error, data) {
       distance_std: +d.distance_std,
     };
   });
+
+  console.log("All links: ", links.length);
+
+  links = links.filter(function(d) { return d.distance_mean < 1.6; })
+
+  console.log("Selected links: ", links.length);
 
   drawSeroGraph({nodes: nodes, links: links});
 
@@ -31,7 +43,7 @@ function drawSeroGraph(graph) {
   var force = d3.layout.force()
       .charge(-500)
       .linkDistance(0)
-      .gravity(0.1)
+      .gravity(0.4)
       .size([width - 150, height]);
 
 
@@ -44,7 +56,7 @@ function drawSeroGraph(graph) {
   force.nodes(graph.nodes)
       .links(graph.links)
       .linkStrength(function (d) {
-          return 0.1 * Math.min(Math.pow(d.distance_mean, -3), 1);
+          return 0.05 * Math.min(Math.pow(d.distance_mean, -3), 1);
       })
       .start();
 
@@ -67,7 +79,7 @@ function drawSeroGraph(graph) {
       .enter().append("circle")
         .attr("class", "node")
         .attr("r", 20)
-        .style("fill", function (d, i) { return color(i); })
+        .style("fill", function (d) { return color(d.h); })
         .on('mouseover', function (d) {
           tooltip.show(d.name);
         })
