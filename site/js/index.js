@@ -37,14 +37,14 @@ function drawSeroGraph(graph) {
 
   var color = d3.scale.category10();
 
-  var width = 600,
-      height = 400;
+  var width = 500,
+      height = 500;
 
   var force = d3.layout.force()
-      .charge(-500)
+      .charge(-400)
       .linkDistance(0)
       .gravity(0.4)
-      .size([width - 150, height]);
+      .size([width, height]);
 
 
   var svg = d3.select("#serograph").append("svg")
@@ -78,7 +78,7 @@ function drawSeroGraph(graph) {
       .data(graph.nodes)
       .enter().append("circle")
         .attr("class", "node")
-        .attr("r", 20)
+        .attr("r", 14)
         .style("fill", function (d) { return color(d.h); })
         .on('mouseover', function (d) {
           tooltip.show(d.name);
