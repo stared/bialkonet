@@ -5,7 +5,7 @@ function drawGraph(graph) {
   console.log("Graph data", graph);
 
   var width = 700,
-      height = 500;
+      height = 650;
 
   var force = d3.layout.force()
       .charge(-100)
