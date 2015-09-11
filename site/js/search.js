@@ -8,7 +8,6 @@ d3.csv("data/crystals_metadata.csv", function(errorCSVcrystals, dataCSVcrystals)
 
   dataCSVmodels.forEach(function (d) {
     d.database = "model";
-    d.id = d.p_id;
   });
 
   var dataCSV = dataCSVcrystals.concat(dataCSVmodels);
@@ -17,7 +16,7 @@ d3.csv("data/crystals_metadata.csv", function(errorCSVcrystals, dataCSVcrystals)
   var rowTemplate = _.template(d3.select("#tableContent").html());
 
   dataCSV.forEach(function (d) {
-    d.search = [d.id, d.template_id, d.database, d.subtype, d.host, d.location, d.year].join(" ");
+    d.search = [d.p_id, d.template_id, d.database, d.subtype, d.host, d.location, d.year].join(" ");
   });
   var table = dataCSV.map(rowTemplate).join("\n");
   d3.select("#resultTable tbody").html(table);

@@ -35,7 +35,7 @@ function drawGraph(graph) {
       .attr("class", "node")
       .attr("r", 5)
       .on('mouseover', function (d) {
-        tooltip.show([d.p_id, d.sero, d.location, d.year, d.host].join("<br>"));
+        tooltip.show([d.p_id, d.subtype, d.location, d.year, d.host].join("<br>"));
       })
       .on('mouseout', function (d) {
         tooltip.out();
