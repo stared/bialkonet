@@ -10,7 +10,7 @@ function drawGraph(graph) {
   var force = d3.layout.force()
       .charge(-100)
       .linkDistance(60)
-      .gravity(0.3)
+      .gravity(2)
       .size([width - 150, height]);
 
 
@@ -33,7 +33,7 @@ function drawGraph(graph) {
       .data(graph.nodes)
       .enter().append("circle")
       .attr("class", "node")
-      .attr("r", 5)
+      .attr("r", 3)
       .on('mouseover', function (d) {
         tooltip.show([d.p_id, d.subtype, d.location, d.year, d.host].join("<br>"));
       })
