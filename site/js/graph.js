@@ -61,9 +61,12 @@ function drawGraph(graph) {
     {name: "subtype", label: "serotype (subtype)"},
     {name: "year", label: "year"},
     {name: "host", label: "host"},
-    {name: "location", label: "location"}
+    // {name: "location", label: "location"},  // continets are fine, but not this thing
   ];
 
+  graph.nodes.forEach(function (d) {
+    d.maintype = "H" + d.H;
+  });
 
   var legend = new Legend('#d3graph svg', node);
   legend.g.attr('transform', 'translate(550, 150)');
@@ -99,6 +102,12 @@ function GraphOptions(parentDom, optionList, data, node, legend){
 
   this.choice = function (field) {
 
+    var sb = {
+      host: 'count',
+      maintype: function (d) { return -d.H; },
+      subtype: function (d) { return -d.H * 1000 - d.N; },
+    };
+
     options
       .style('fill', function (d) {
         return d.name == field ? 'black' : 'grey';
@@ -107,21 +116,20 @@ function GraphOptions(parentDom, optionList, data, node, legend){
     // hard-coded, but it will be changed
     if (field != 'year') {
 
+      // it modifies the input node data, but in a harmless way
       var aggregated = _.chain(data)
-        .countBy(field)
+        .groupBy(field)
         .map(function (val, key) {
-          return {name: key, count: val}
+          return _.assign(val[0], {count: val.length});
         })
-        .sortBy('count')
+        .sortBy(sb[field])
         .reverse()
         .map(function (d, i) {
-          return _.assign(d, {color: color(i)})
+          return _.assign(d, {color: color(i), name: d[field]});
         })
         .value();
 
-      console.log("aggregated", aggregated);
-
-      var colorMap = _.indexBy(aggregated, 'name');
+      var colorMap = _.indexBy(aggregated, field);
 
       legend.update(aggregated, field);
 
