@@ -23,7 +23,7 @@ function drawGraph(graph) {
   force.nodes(graph.nodes)
       .links(graph.links)
       .linkStrength(function (d) {
-          return Math.pow(d.weight, 4);
+          return d.weight; // scaling done elsewhere // Math.pow(d.weight, 4);
       })
       .start();
 

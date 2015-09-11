@@ -8,21 +8,31 @@ sequenceViewer.onZoom = proteinViewer.highlightFromTo;
 // proteinViewer.load("10gs_orig.pdb", ["testowanie/10gs_orig.pdb"].join(""));
 
 // in future, data should be joined beforehand
-d3.json("data/graph.json", function(errorJSON, dataJSON) {
-  d3.csv("data/crystals_metadata.csv", function(errorCSV, dataCSV) {
+d3.csv("data/distance_crystals_rmsd_full.csv", function(errorCSVdist, distances) {
+  d3.csv("data/crystals_metadata.csv", function(errorCSVdist, nodes) {
 
-    var additionalData = _.indexBy(dataCSV, 'id');
-    dataJSON.nodes = dataJSON.nodes
-      .map(function(d) {
-        return _.assign(d, additionalData[d.p_id]);
-      })
-      .map(function (d) {
-        return _.assign(d, {maintype: d.subtype ? d.subtype.split("N")[0] : undefined})
-      });
+    var id2node = {};
 
-    drawGraph(dataJSON);
+    nodes.forEach(function (d, i) {
+      id2node[d.p_id] = i;
+    });
 
-    // calculate h and n
+    var links = distances.map(function (d) {
+      return {
+        weight: Math.exp(-d.value/0.2),
+        a: d.p_id,
+        b: d.p_id2,
+        source: id2node[d.p_id],
+        target: id2node[d.p_id2],
+      };
+    }).filter(function (d) {
+      // there shouldn't be, but it seems I were given messy data... :/
+      return d.source !== undefined && d.target !== undefined;
+    }); 
+
+    var graph = {nodes: nodes, links: links};
+
+    drawGraph(graph);
 
   });
 });
