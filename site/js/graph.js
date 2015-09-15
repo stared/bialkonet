@@ -1,78 +1,92 @@
-function drawGraph(graph) {
-
-  console.log("Graph data", graph);
+function DistanceGraph(domId) {
 
   var width = 700,
       height = 650;
 
-  var force = d3.layout.force()
-      .charge(-100)
-      .linkDistance(60)
-      .gravity(2)
-      .size([width - 150, height]);
-
-
-  var svg = d3.select("#d3graph").append("svg")
+  var svg = d3.select("#" + domId).append("svg")
     .attr("width", width)
     .attr("height", height);
 
   var tooltip = new Tooltip('body');
 
-  force.nodes(graph.nodes)
-      .links(graph.links)
+  this.force = d3.layout.force()
+    .size([width - 150, height]);
+
+
+  this.updateNodes = function(nodes) {
+
+    this.nodes = nodes;
+
+    this.force = this.force
+      .charge(-100)
+      .linkDistance(60)
+      .gravity(2)
+      .nodes(nodes);
+
+  };
+
+
+  this.updateLinks = function(links) {
+
+    this.links = links;
+
+    this.force = this.force
+      .links(links)
       .linkStrength(function (d) {
           return d.weight; // scaling done elsewhere // Math.pow(d.weight, 4);
       })
       .start();
 
-  var drag = force.drag();
+    var drag = this.force.drag();
 
-  var node = svg.selectAll(".node")
-      .data(graph.nodes)
-      .enter().append("circle")
-      .attr("class", "node")
-      .attr("r", 3)
-      .on('mouseover', function (d) {
-        tooltip.show([d.p_id, d.subtype, d.location, d.year, d.host].join("<br>"));
-      })
-      .on('mouseout', function (d) {
-        tooltip.out();
-      })
-      .on('click', function (d) {
-        // we don't want duplicates
-        if (_.includes(_.pluck(proteinViewer.colorNameList, 'name'), d.p_id)) {
-          return;
-        }
-        proteinViewer.load(d.p_id, ["pdb/crystals/", d.p_id, "_chA.pdb"].join(""));
-        // WARNING: temporary workaround with regex to make zooming working;
-        sequenceViewer.load(d.p_id, d.sequence.replace(/-/g, ""), proteinViewer.superimpose);
-      })
-      .call(drag);
+    var node = svg.selectAll(".node")
+        .data(this.nodes)
+        .enter().append("circle")
+        .attr("class", "node")
+        .attr("r", 3)
+        .on('mouseover', function (d) {
+          tooltip.show([d.p_id, d.subtype, d.location, d.year, d.host].join("<br>"));
+        })
+        .on('mouseout', function (d) {
+          tooltip.out();
+        })
+        .on('click', function (d) {
+          // we don't want duplicates
+          if (_.includes(_.pluck(proteinViewer.colorNameList, 'name'), d.p_id)) {
+            return;
+          }
+          proteinViewer.load(d.p_id, ["pdb/crystals/", d.p_id, "_chA.pdb"].join(""));
+          // WARNING: temporary workaround with regex to make zooming working;
+          sequenceViewer.load(d.p_id, d.sequence.replace(/-/g, ""), proteinViewer.superimpose);
+        })
+        .call(drag);
 
-  force.on("tick", function() {
-      node.attr("cx", function(d) { return d.x; })
-          .attr("cy", function(d) { return d.y; });
-  });
+    this.force.on("tick", function() {
+        node.attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+    });
 
-  var optionList = [
-    {name: "maintype", label: "serotype (main)"},
-    {name: "subtype", label: "serotype (subtype)"},
-    {name: "year", label: "year"},
-    {name: "host_class", label: "host"},
-    {name: "continent", label: "continent"},
-  ];
+    var optionList = [
+      {name: "maintype", label: "serotype (main)"},
+      {name: "subtype", label: "serotype (subtype)"},
+      {name: "year", label: "year"},
+      {name: "host_class", label: "host"},
+      {name: "continent", label: "continent"},
+    ];
 
-  graph.nodes.forEach(function (d) {
-    d.maintype = "H" + d.H;
-  });
+    this.nodes.forEach(function (d) {
+      d.maintype = "H" + d.H;
+    });
 
-  var legend = new Legend('#d3graph svg', node);
-  legend.g.attr('transform', 'translate(550, 150)');
+    var legend = new Legend('#d3graph svg', node);
+    legend.g.attr('transform', 'translate(550, 150)');
 
-  var graphOptions = new GraphOptions('#d3graph svg', optionList, graph.nodes, node, legend);
-  graphOptions.g.attr('transform', 'translate(550, 25)');
+    var graphOptions = new GraphOptions('#d3graph svg', optionList, this.nodes, node, legend);
+    graphOptions.g.attr('transform', 'translate(550, 25)');
 
-  graphOptions.choice('subtype');
+    graphOptions.choice('subtype');
+
+  };
 
 }
 

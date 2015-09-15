@@ -1,3 +1,5 @@
+var distanceGraph = new DistanceGraph('d3graph');
+
 var proteinViewer = new ProteinViewer('structureViewer');
 
 var sequenceViewer = new SequenceViewer("sequenceViewer", 500, 300, 20);
@@ -34,9 +36,8 @@ d3.csv("data/distance_models_rmsd.csv", function(errorCSVdist, distances) {
       return d.source !== undefined && d.target !== undefined;
     }); 
 
-    var graph = {nodes: nodes, links: links};
-
-    drawGraph(graph);
+    distanceGraph.updateNodes(nodes);
+    distanceGraph.updateLinks(links);
 
   });
 });
