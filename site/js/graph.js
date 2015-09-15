@@ -149,9 +149,10 @@ function GraphOptions(parentDom, optionList, data, node, legend){
       } else if (aggregated.length <= 20) {
         var colorF = d3.scale.category20();
       } else {
+        var n = aggregated.length;
         var colorF = d3.scale.linear()
-          .domain([0, aggregated.length - 1])
-          .range(['red', 'blue']);
+          .domain([0, n/3, 2*n/3, 3.5*n/3])
+          .range(['red', 'green', 'blue', 'red']);
       }
 
       legend.update(aggregated, field, colorF);
@@ -204,8 +205,8 @@ function Legend (parentDom, node) {
       .enter()
       .append('rect')
         .attr('class', 'legend-box')
-        .attr('x', 0)
-        .attr('y', function (d, i) { return 15 * i; })
+        .attr('x', function (d, i) { return 70 * Math.floor(i / 24); })
+        .attr('y', function (d, i) { return 15 * (i % 24); })
         .attr('width', 10)
         .attr('height', 10)
         .style('fill', function (d) { return colorF(d.i); })
@@ -222,8 +223,8 @@ function Legend (parentDom, node) {
       .enter()
       .append('text')
         .attr('class', 'legend-label')
-        .attr('x', 15)
-        .attr('y', function (d, i) { return 15 * i + 10; })
+        .attr('x', function (d, i) { return 15 + 70 * Math.floor(i / 24); })
+        .attr('y', function (d, i) { return 15 * (i % 24) + 10; })
         .text(function (d) { return d.name; })
         .on('mouseover', function (d) {
           node.style('stroke', function (c) {
