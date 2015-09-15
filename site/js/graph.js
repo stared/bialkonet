@@ -1,5 +1,3 @@
-var color = d3.scale.category20();
-
 function drawGraph(graph) {
 
   console.log("Graph data", graph);
@@ -60,8 +58,8 @@ function drawGraph(graph) {
     {name: "maintype", label: "serotype (main)"},
     {name: "subtype", label: "serotype (subtype)"},
     {name: "year", label: "year"},
-    {name: "host", label: "host"},
-    // {name: "location", label: "location"},  // continets are fine, but not this thing
+    {name: "host_class", label: "host"},
+    {name: "continent", label: "continent"},
   ];
 
   graph.nodes.forEach(function (d) {
@@ -103,9 +101,10 @@ function GraphOptions(parentDom, optionList, data, node, legend){
   this.choice = function (field) {
 
     var sb = {
-      host: 'count',
+      host_class: 'count',
       maintype: function (d) { return -d.H; },
       subtype: function (d) { return -d.H * 1000 - d.N; },
+      continent: 'count'
     };
 
     options
@@ -125,16 +124,26 @@ function GraphOptions(parentDom, optionList, data, node, legend){
         .sortBy(sb[field])
         .reverse()
         .map(function (d, i) {
-          return _.assign(d, {color: color(i), name: d[field]});
+          return _.assign(d, {i: i, name: d[field]});
         })
         .value();
 
       var colorMap = _.indexBy(aggregated, field);
 
-      legend.update(aggregated, field);
+      if (aggregated.length <= 10) {
+        var colorF = d3.scale.category10();
+      } else if (aggregated.length <= 20) {
+        var colorF = d3.scale.category20();
+      } else {
+        var colorF = d3.scale.linear()
+          .domain([0, aggregated.length - 1])
+          .range(['red', 'blue']);
+      }
+
+      legend.update(aggregated, field, colorF);
 
       node.style("fill", function(d) {
-        return colorMap[d[field]].color; 
+        return colorF(colorMap[d[field]].i); 
       });
 
     } else {
@@ -169,7 +178,7 @@ function Legend (parentDom, node) {
 
   this.g = d3.select(parentDom).append('g');
 
-  this.update = function (nameColorList, field) {
+  this.update = function (nameColorList, field, colorF) {
     
     this.g.selectAll('.legend-box').remove();
     this.g.selectAll('.legend-label').remove();
@@ -185,7 +194,7 @@ function Legend (parentDom, node) {
         .attr('y', function (d, i) { return 15 * i; })
         .attr('width', 10)
         .attr('height', 10)
-        .style('fill', function (d) { return d.color; })
+        .style('fill', function (d) { return colorF(d.i); })
         .on('mouseover', function (d) {
           node.style('stroke', function (c) {
             return c[field] == d.name ? "black" : null;
