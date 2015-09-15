@@ -170,15 +170,15 @@ function GraphOptions(parentDom, optionList, data, node, legend){
       console.log("yearMin", yearMin);
       console.log(_.countBy(data, 'year'));
 
-      var colorScale = d3.scale.linear()
-        .domain([yearMin, yearMax])
-        .range(['brown', 'lightgreen']);
+      var colorScale = d3.scale.log()
+        .domain([1, yearMax + 1 - yearMin])
+        .range(['red', 'blue']);
 
       // right now just clearning the categorical legend 
       legend.update([], field);
 
       node.style("fill", function(d) {
-        return colorScale(parseInt(d.year)); 
+        return colorScale(parseInt(yearMax + 1 - d.year)); 
       });
 
     }
