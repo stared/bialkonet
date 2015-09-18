@@ -1,5 +1,5 @@
-d3.csv("data/crystals_metadata.csv", function(errorCSVcrystals, dataCSVcrystals) {
-  d3.csv("data/models_metadata.csv", function(errorCSVmodels, dataCSVmodels) {
+d3.csv("data/metadata_crystals.csv", function(errorCSVcrystals, dataCSVcrystals) {
+  d3.csv("data/metadata_models.csv", function(errorCSVmodels, dataCSVmodels) {
 
   dataCSVcrystals.forEach(function (d) {
     d.database = "crystal";

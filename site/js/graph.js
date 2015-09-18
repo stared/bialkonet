@@ -1,5 +1,7 @@
 function DistanceGraph(domId) {
 
+  var thisDG = this;
+
   var width = 700,
       height = 650;
 
@@ -11,6 +13,64 @@ function DistanceGraph(domId) {
 
   this.force = d3.layout.force()
     .size([width - 150, height]);
+
+  var nodeDatasets = [
+    {name: "crystals", r: 5},
+    {name: "models", r: 3},
+  ];
+
+  var linkDatasets = [
+    {name: "rmsd"}
+  ];
+
+
+  var menu = svg.append("g")
+    .attr("transform", "translate(20, 20)");
+
+  menu.selectAll(".node-file")
+    .data(nodeDatasets)
+    .enter()
+      .append('text')
+        .attr('class', 'node-file')
+        .attr('x', 0)
+        .attr('y', function (d, i) { return 20 * i; })
+        .text(function (d) {return d.name;})
+        .on('click', function (d) {
+          thisDG.dataset = d.name;
+          thisDG.force.stop();
+          d3.csv("data/metadata_" + d.name + ".csv", function(error, nodes) {
+            thisDG.updateNodes(nodes);
+          });
+
+          menu
+            .selectAll(".node-file")
+            .data(nodeDatasets)
+              .style("opacity", function (c) {
+                return c.name === d.name ? 1 : 0.5;
+              });
+        });
+
+  menu.selectAll(".dist-file")
+    .data(linkDatasets)
+    .enter()
+      .append('text')
+        .attr('class', 'dist-file')
+        .attr('x', 100)
+        .attr('y', function (d, i) { return 20 * i; })
+        .text(function (d) {return d.name;})
+        .on('click', function (d) {
+          console.log("ld d", d);
+          thisDG.force.stop();
+          d3.csv("data/distance_" + thisDG.dataset + "_" + d.name + ".csv", function(error, links) {
+            thisDG.updateLinks(links);
+          });
+
+          menu
+            .selectAll(".dist-file")
+              .style("opacity", function (c) {
+                return c.name === d.name ? 1 : 0.5;
+              });
+        });
 
 
   this.updateNodes = function(nodes) {
@@ -28,10 +88,31 @@ function DistanceGraph(domId) {
 
   this.updateLinks = function(links) {
 
-    this.links = links;
+    // preprocessing
+
+    var id2node = {};
+
+    this.nodes.forEach(function (d, i) {
+      id2node[d.p_id] = i;
+    });
+
+    this.links = links.map(function (d) {
+      return {
+        // weight: Math.exp(-d.value/0.2),  // for crystals
+        weight: Math.exp(-d.value/0.5),  // for models
+        a: d.p_id,
+        b: d.p_id2,
+        source: id2node[d.p_id],
+        target: id2node[d.p_id2],
+      };
+    }).filter(function (d) {
+      // there shouldn't be, but it seems I were given messy data... :/
+      return d.source !== undefined && d.target !== undefined;
+    }); 
+
 
     this.force = this.force
-      .links(links)
+      .links(this.links)
       .linkStrength(function (d) {
           return d.weight; // scaling done elsewhere // Math.pow(d.weight, 4);
       })

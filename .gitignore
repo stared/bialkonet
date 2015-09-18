@@ -1,9 +1,10 @@
 .DS_Store
 PDB_crystals_data_I/
-/data/
 .ipynb_checkpoints/
 HA_data/
 external/
 przydatne/
 opisy/
+/data/
+pyszczki_surowe/
 
