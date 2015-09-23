@@ -26,6 +26,9 @@ function DistanceGraph(domId) {
   // defaults
   this.nodeDataset = "crystals";
   this.linkDataset = "rmsd";
+  d3.csv("data/metadata_" + this.nodeDataset + ".csv", function(error, nodes) {
+    thisDG.updateNodes(nodes);
+  });
 
   var menu = svg.append("g")
     .attr("transform", "translate(20, 20)");
@@ -37,7 +40,10 @@ function DistanceGraph(domId) {
         .attr('class', 'node-file')
         .attr('x', 0)
         .attr('y', function (d, i) { return 20 * i; })
-        .text(function (d) {return d.name;})
+        .text(function (d) { return d.name; })
+        .style("opacity", function (d) {
+          return d.name === thisDG.nodeDataset ? 1 : 0.5;
+        })
         .on('click', function (d) {
           thisDG.nodeDataset = d.name;
           thisDG.force.stop();
@@ -60,7 +66,10 @@ function DistanceGraph(domId) {
         .attr('class', 'dist-file')
         .attr('x', 100)
         .attr('y', function (d, i) { return 20 * i; })
-        .text(function (d) {return d.name;})
+        .text(function (d) { return d.name; })
+        .style("opacity", function (d) {
+          return d.name === thisDG.linkDataset ? 1 : 0.5;
+        })
         .on('click', function (d) {
           thisDG.linkDataset = d.name;
           thisDG.force.stop();
@@ -124,7 +133,7 @@ function DistanceGraph(domId) {
           if (_.includes(_.pluck(proteinViewer.colorNameList, 'name'), d.p_id)) {
             return;
           }
-          proteinViewer.load(d.p_id, ["pdb/crystals/", d.p_id, "_chA.pdb"].join(""));
+          proteinViewer.load(d.p_id, ["pdb/" + thisDG.nodeDataset + "/", d.p_id, "_chA.pdb"].join(""));
           // WARNING: temporary workaround with regex to make zooming working;
           sequenceViewer.load(d.p_id, d.sequence.replace(/-/g, ""), proteinViewer.superimpose);
         })
