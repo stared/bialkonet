@@ -111,7 +111,7 @@ function DistanceGraph(domId) {
         gravity: 0.7
       },
       models: {
-        r: 3,
+        r: 4,
         charge: -110,
         gravity: 2.5
       },
@@ -171,6 +171,9 @@ function DistanceGraph(domId) {
     this.graphOptions.nodes = this.nodes;
     this.graphOptions.node = node;
     this.graphOptions.choice(this.graphOptions.currentField || 'subtype');
+
+    proteinViewer.clear();
+    sequenceViewer.clear();
 
     d3.csv("data/distance_" + thisDG.nodeDataset + "_" + thisDG.linkDataset + ".csv", function(error, links) {
       thisDG.updateLinks(links);

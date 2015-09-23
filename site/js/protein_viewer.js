@@ -71,7 +71,6 @@ function ProteinViewer(domId) {
   var styleSelect = d3.select("#" + domId).append('select')
     .attr('id', 'structureStyle')
     .on('change', function (x, y) {
-      console.log("d3.select(this).node().value", d3.select(this).node().value);
       that.structureStyle = strToStyleFunction[d3.select(this).node().value];
     });
 
@@ -105,12 +104,21 @@ function ProteinViewer(domId) {
       var rotation = pv.viewpoint.principalAxes(go);
       viewer.setRotation(rotation)
 
-      viewer.autoZoom();
+      if (that.colorNameList.length === 1) {
+        viewer.autoZoom();
+      }
 
       that.proteinLegend.update(that.colorNameList);
     });
 
   }
+
+  this.clear = function() {
+    viewer.clear();
+    viewer.requestRedraw();
+    that.colorNameList = [];
+    that.proteinLegend.update(that.colorNameList);
+  };
 
   // by residue index, not - atom index
   function highlightFromToOp(start, end) {

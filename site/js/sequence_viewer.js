@@ -71,6 +71,17 @@ function SequenceViewer(domId, width, height, margin) {
     this.draw(this.data);
   };
 
+
+  this.clear = function () {
+
+    this.data = [];
+    this.g.selectAll('.sequence').remove();
+    this.axisXLegend.selectAll("*").remove();
+    this.hover.style("opacity", 0);
+
+  };
+
+
   this.draw = function (data) {
 
     // in case draw is called directly
