@@ -144,7 +144,7 @@ function DistanceGraph(domId) {
     this.legend.node = node;
     this.graphOptions.nodes = this.nodes;
     this.graphOptions.node = node;
-    this.graphOptions.choice('subtype');
+    this.graphOptions.choice(this.graphOptions.currentField || 'subtype');
 
     d3.csv("data/distance_" + thisDG.nodeDataset + "_" + thisDG.linkDataset + ".csv", function(error, links) {
       thisDG.updateLinks(links);
@@ -209,6 +209,8 @@ function GraphOptions(parentDom, optionList, legend){
       });
 
   this.choice = function (field) {
+
+    this.currentField = field;
 
     var sb = {
       host_class: 'count',
