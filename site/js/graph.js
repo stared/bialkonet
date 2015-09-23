@@ -23,6 +23,9 @@ function DistanceGraph(domId) {
     {name: "rmsd"}
   ];
 
+  // defaults
+  this.nodeDataset = "crystals";
+  this.linkDataset = "rmsd";
 
   var menu = svg.append("g")
     .attr("transform", "translate(20, 20)");
@@ -36,7 +39,7 @@ function DistanceGraph(domId) {
         .attr('y', function (d, i) { return 20 * i; })
         .text(function (d) {return d.name;})
         .on('click', function (d) {
-          thisDG.dataset = d.name;
+          thisDG.nodeDataset = d.name;
           thisDG.force.stop();
           d3.csv("data/metadata_" + d.name + ".csv", function(error, nodes) {
             thisDG.updateNodes(nodes);
@@ -59,9 +62,9 @@ function DistanceGraph(domId) {
         .attr('y', function (d, i) { return 20 * i; })
         .text(function (d) {return d.name;})
         .on('click', function (d) {
-          console.log("ld d", d);
+          thisDG.linkDataset = d.name;
           thisDG.force.stop();
-          d3.csv("data/distance_" + thisDG.dataset + "_" + d.name + ".csv", function(error, links) {
+          d3.csv("data/distance_" + thisDG.nodeDataset + "_" + d.name + ".csv", function(error, links) {
             thisDG.updateLinks(links);
           });
 
@@ -73,15 +76,79 @@ function DistanceGraph(domId) {
         });
 
 
+  var optionList = [
+    {name: "maintype", label: "serotype (main)"},
+    {name: "subtype", label: "serotype (subtype)"},
+    {name: "year", label: "year"},
+    {name: "host_class", label: "host"},
+    {name: "continent", label: "continent"},
+  ];
+
+  this.legend = new Legend('#d3graph svg');
+  this.legend.g.attr('transform', 'translate(550, 150)');
+
+  this.graphOptions = new GraphOptions('#d3graph svg', optionList, this.legend);
+  this.graphOptions.g.attr('transform', 'translate(550, 25)');
+
+
   this.updateNodes = function(nodes) {
 
     this.nodes = nodes;
+
+    this.nodes.forEach(function (d) {
+      d.maintype = "H" + d.H;
+    });
 
     this.force = this.force
       .charge(-100)
       .linkDistance(60)
       .gravity(2)
       .nodes(nodes);
+
+    var drag = this.force.drag();
+
+    var node = svg.selectAll(".node")
+        .data(this.nodes, function (d) { return d.p_id; });
+
+    node.enter()
+      .append("circle")
+        .attr("class", "node")
+        .on('mouseover', function (d) {
+          tooltip.show([d.p_id, d.subtype, d.location, d.year, d.host].join("<br>"));
+        })
+        .on('mouseout', function (d) {
+          tooltip.out();
+        })
+        .on('click', function (d) {
+          // we don't want duplicates
+          if (_.includes(_.pluck(proteinViewer.colorNameList, 'name'), d.p_id)) {
+            return;
+          }
+          proteinViewer.load(d.p_id, ["pdb/crystals/", d.p_id, "_chA.pdb"].join(""));
+          // WARNING: temporary workaround with regex to make zooming working;
+          sequenceViewer.load(d.p_id, d.sequence.replace(/-/g, ""), proteinViewer.superimpose);
+        })
+        .call(drag);
+
+    node
+      .attr("r", 3)
+
+    node.exit()
+      .remove();
+
+    this.force.on("tick", function() {
+        node.attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+    });
+
+    this.legend.node = node;
+    this.graphOptions.nodes = this.nodes;
+    this.graphOptions.node = node;
+    this.graphOptions.choice('subtype');
+
+    d3.csv("data/distance_" + thisDG.nodeDataset + "_" + thisDG.linkDataset + ".csv", function(error, links) {
+      thisDG.updateLinks(links);
+    });
 
   };
 
@@ -110,7 +177,6 @@ function DistanceGraph(domId) {
       return d.source !== undefined && d.target !== undefined;
     }); 
 
-
     this.force = this.force
       .links(this.links)
       .linkStrength(function (d) {
@@ -118,65 +184,14 @@ function DistanceGraph(domId) {
       })
       .start();
 
-    var drag = this.force.drag();
-
-    var node = svg.selectAll(".node")
-        .data(this.nodes)
-        .enter().append("circle")
-        .attr("class", "node")
-        .attr("r", 3)
-        .on('mouseover', function (d) {
-          tooltip.show([d.p_id, d.subtype, d.location, d.year, d.host].join("<br>"));
-        })
-        .on('mouseout', function (d) {
-          tooltip.out();
-        })
-        .on('click', function (d) {
-          // we don't want duplicates
-          if (_.includes(_.pluck(proteinViewer.colorNameList, 'name'), d.p_id)) {
-            return;
-          }
-          proteinViewer.load(d.p_id, ["pdb/crystals/", d.p_id, "_chA.pdb"].join(""));
-          // WARNING: temporary workaround with regex to make zooming working;
-          sequenceViewer.load(d.p_id, d.sequence.replace(/-/g, ""), proteinViewer.superimpose);
-        })
-        .call(drag);
-
-    this.force.on("tick", function() {
-        node.attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
-    });
-
-    var optionList = [
-      {name: "maintype", label: "serotype (main)"},
-      {name: "subtype", label: "serotype (subtype)"},
-      {name: "year", label: "year"},
-      {name: "host_class", label: "host"},
-      {name: "continent", label: "continent"},
-    ];
-
-    this.nodes.forEach(function (d) {
-      d.maintype = "H" + d.H;
-    });
-
-    var legend = new Legend('#d3graph svg', node);
-    legend.g.attr('transform', 'translate(550, 150)');
-
-    var graphOptions = new GraphOptions('#d3graph svg', optionList, this.nodes, node, legend);
-    graphOptions.g.attr('transform', 'translate(550, 25)');
-
-    graphOptions.choice('subtype');
-
   };
 
 }
 
 
-function GraphOptions(parentDom, optionList, data, node, legend){
+function GraphOptions(parentDom, optionList, legend){
 
   this.g = d3.select(parentDom).append('g');
-  this.data = data;
-  this.node = node;
   this.legend = legend;
 
   var options = this.g.selectAll('.option').data(optionList);
@@ -211,7 +226,7 @@ function GraphOptions(parentDom, optionList, data, node, legend){
     if (field != 'year') {
 
       // it modifies the input node data, but in a harmless way
-      var aggregated = _.chain(data)
+      var aggregated = _.chain(this.nodes)
         .groupBy(field)
         .map(function (val, key) {
           return _.assign(val[0], {count: val.length});
@@ -238,18 +253,15 @@ function GraphOptions(parentDom, optionList, data, node, legend){
 
       legend.update(aggregated, field, colorF);
 
-      node.style("fill", function(d) {
+      this.node.style("fill", function(d) {
         return colorF(colorMap[d[field]].i); 
       });
 
     } else {
 
       // because of data messiness, +d.year is not enough
-      var yearMin = d3.min(data, function (d) { return parseInt(d.year); }); 
-      var yearMax = d3.max(data, function (d) { return parseInt(d.year); });
-
-      console.log("yearMin", yearMin);
-      console.log(_.countBy(data, 'year'));
+      var yearMin = d3.min(this.nodes, function (d) { return parseInt(d.year); }); 
+      var yearMax = d3.max(this.nodes, function (d) { return parseInt(d.year); });
 
       var colorScale = d3.scale.log()
         .domain([1, yearMax + 1 - yearMin])
@@ -258,7 +270,7 @@ function GraphOptions(parentDom, optionList, data, node, legend){
       // right now just clearning the categorical legend 
       legend.update([], field);
 
-      node.style("fill", function(d) {
+      this.node.style("fill", function(d) {
         return colorScale(parseInt(yearMax + 1 - d.year)); 
       });
 
@@ -270,12 +282,14 @@ function GraphOptions(parentDom, optionList, data, node, legend){
 }
 
 
-function Legend (parentDom, node) {
+function Legend (parentDom) {
 
   this.g = d3.select(parentDom).append('g');
 
   this.update = function (nameColorList, field, colorF) {
     
+    var node = this.node;
+
     this.g.selectAll('.legend-box').remove();
     this.g.selectAll('.legend-label').remove();
 
