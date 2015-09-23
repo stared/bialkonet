@@ -15,8 +15,8 @@ function DistanceGraph(domId) {
     .size([width - 150, height]);
 
   var nodeDatasets = [
-    {name: "crystals", r: 5},
-    {name: "models", r: 3},
+    {name: "crystals"},
+    {name: "models"},
   ];
 
   var linkDatasets = [
@@ -102,6 +102,21 @@ function DistanceGraph(domId) {
 
   this.updateNodes = function(nodes) {
 
+    var optsByDataset = {
+      crystals: {
+        r: 5,
+        charge: -150,
+        gravity: 0.7
+      },
+      models: {
+        r: 3,
+        charge: -110,
+        gravity: 2.5
+      },
+    };
+
+    var opts = optsByDataset[this.nodeDataset];
+
     this.nodes = nodes;
 
     this.nodes.forEach(function (d) {
@@ -109,9 +124,9 @@ function DistanceGraph(domId) {
     });
 
     this.force = this.force
-      .charge(-100)
+      .charge(opts.charge)
       .linkDistance(60)
-      .gravity(2)
+      .gravity(opts.gravity)
       .nodes(nodes);
 
     var drag = this.force.drag();
@@ -140,7 +155,7 @@ function DistanceGraph(domId) {
         .call(drag);
 
     node
-      .attr("r", 3)
+      .attr("r", opts.r)
 
     node.exit()
       .remove();
@@ -164,7 +179,12 @@ function DistanceGraph(domId) {
 
   this.updateLinks = function(links) {
 
-    // preprocessing
+    var wfs = {
+      crystals_rmsd: function (d) { return Math.exp(-d.value/0.2); },
+      models_rmsd: function (d) { return Math.exp(-d.value/0.5); },
+    }
+
+    var wf = wfs[this.nodeDataset + "_" + this.linkDataset];
 
     var id2node = {};
 
@@ -174,8 +194,7 @@ function DistanceGraph(domId) {
 
     this.links = links.map(function (d) {
       return {
-        // weight: Math.exp(-d.value/0.2),  // for crystals
-        weight: Math.exp(-d.value/0.5),  // for models
+        weight: wf(d),
         a: d.p_id,
         b: d.p_id2,
         source: id2node[d.p_id],
