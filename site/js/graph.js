@@ -183,10 +183,10 @@ function DistanceGraph(domId) {
 
     var wfs = {
       crystals_rmsd: function (d) { return Math.exp(-d.value/0.2); },
-      crystals_esp: function (d) {return Math.exp(-Math.sqrt(d.distance)/0.15); },
+      crystals_esp: function (d) {return Math.exp(-Math.pow(d.distance/0.15, 8)); },
       crystals_seq: function (d) {return Math.pow(d.distance/1800, 8); },
       models_rmsd: function (d) { return Math.exp(-d.value/0.5); },
-      models_esp: function (d) {return Math.exp(-Math.sqrt(d.distance)/0.15); },
+      models_esp: function (d) {return Math.exp(-Math.pow(d.distance/0.15, 8)); },
       models_seq: function (d) {return Math.pow(d.distance/1800, 8); },
     }
 
