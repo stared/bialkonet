@@ -150,7 +150,7 @@ function DistanceGraph(domId) {
           if (_.includes(_.pluck(proteinViewer.colorNameList, 'name'), d.p_id)) {
             return;
           }
-          proteinViewer.load(d.p_id, ["pdb/" + thisDG.nodeDataset + "/", d.p_id, "_chA.pdb"].join(""));
+          proteinViewer.load(d.p_id, ["pdb/" + thisDG.nodeDataset + "/", d.p_id, ".pdb"].join(""));
           // WARNING: temporary workaround with regex to make zooming working;
           sequenceViewer.load(d.p_id, d.sequence.replace(/-/g, ""), proteinViewer.superimpose);
         })
