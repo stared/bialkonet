@@ -10,7 +10,7 @@
     stroke-width: 1.5px;
 }
 
-.option, .box, .legend
+.option, .box, .legend, .node-file, .dist-file
 {
     cursor: default;
 }
