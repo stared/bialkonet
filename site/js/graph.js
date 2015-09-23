@@ -20,7 +20,9 @@ function DistanceGraph(domId) {
   ];
 
   var linkDatasets = [
-    {name: "rmsd"}
+    {name: "rmsd"},
+    {name: "esp"},
+    {name: "seq"}
   ];
 
   // defaults
@@ -181,7 +183,11 @@ function DistanceGraph(domId) {
 
     var wfs = {
       crystals_rmsd: function (d) { return Math.exp(-d.value/0.2); },
+      crystals_esp: function (d) {return Math.exp(-Math.sqrt(d.distance)/0.15); },
+      crystals_seq: function (d) {return Math.pow(d.distance/1800, 8); },
       models_rmsd: function (d) { return Math.exp(-d.value/0.5); },
+      models_esp: function (d) {return Math.exp(-Math.sqrt(d.distance)/0.15); },
+      models_seq: function (d) {return Math.pow(d.distance/1800, 8); },
     }
 
     var wf = wfs[this.nodeDataset + "_" + this.linkDataset];
@@ -202,13 +208,15 @@ function DistanceGraph(domId) {
       };
     }).filter(function (d) {
       // there shouldn't be, but it seems I were given messy data... :/
-      return d.source !== undefined && d.target !== undefined;
+      return d.source !== undefined && d.target !== undefined && d.source !== d.target;
     }); 
+
+    console.log("mean weigth", d3.mean(this.links, function(d) { return d.weight; }));
 
     this.force = this.force
       .links(this.links)
       .linkStrength(function (d) {
-          return d.weight; // scaling done elsewhere // Math.pow(d.weight, 4);
+          return d.weight;
       })
       .start();
 
