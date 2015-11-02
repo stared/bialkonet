@@ -90,7 +90,7 @@ function DistanceGraph(domId) {
   var optionList = [
     {name: "maintype", label: "serotype (main)"},
     {name: "subtype", label: "serotype (subtype)"},
-    {name: "year", label: "year"},
+    {name: "yearNum", label: "year"},
     {name: "host_class", label: "host"},
     {name: "continent", label: "continent"},
   ];
@@ -112,7 +112,7 @@ function DistanceGraph(domId) {
       },
       models: {
         r: 4,
-        charge: -110,
+        charge: -120,
         gravity: 2.5
       },
     };
@@ -123,6 +123,10 @@ function DistanceGraph(domId) {
 
     this.nodes.forEach(function (d) {
       d.maintype = "H" + d.H;
+    });
+
+    this.nodes.forEach(function (d) {
+      d.yearNum = parseInt(d.year) || "N/A";
     });
 
     this.force = this.force
@@ -263,21 +267,21 @@ function GraphOptions(parentDom, optionList, legend){
         return d.name == field ? 'black' : 'grey';
       });
 
-    // hard-coded, but it will be changed
-    if (field != 'year') {
+    // it modifies the input node data, but in a harmless way
+    var aggregated = _.chain(this.nodes)
+      .groupBy(field)
+      .map(function (val, key) {
+        return _.assign(val[0], {count: val.length});
+      })
+      .sortBy(sb[field])
+      .reverse()
+      .map(function (d, i) {
+        return _.assign(d, {i: i, name: d[field]});
+      })
+      .value();
 
-      // it modifies the input node data, but in a harmless way
-      var aggregated = _.chain(this.nodes)
-        .groupBy(field)
-        .map(function (val, key) {
-          return _.assign(val[0], {count: val.length});
-        })
-        .sortBy(sb[field])
-        .reverse()
-        .map(function (d, i) {
-          return _.assign(d, {i: i, name: d[field]});
-        })
-        .value();
+    // hard-coded, but it will be changed
+    if (field != 'yearNum') {
 
       var colorMap = _.indexBy(aggregated, field);
 
@@ -308,11 +312,11 @@ function GraphOptions(parentDom, optionList, legend){
         .domain([1, yearMax + 1 - yearMin])
         .range(['red', 'blue']);
 
-      // right now just clearning the categorical legend 
-      legend.update([], field);
+      legend.update(aggregated, field, colorScale);
 
+      // need to make colors on nodes the same as for the legend (linear vs ordinal)
       this.node.style("fill", function(d) {
-        return colorScale(parseInt(yearMax + 1 - d.year)); 
+        return isFinite(d.yearNum) ? colorScale(yearMax + 1 - d.yearNum) : "#000"; 
       });
 
     }

@@ -49,8 +49,7 @@ div.tooltip
     top: 55px;
     left: 700px;
     width: 500px;
-    border: solid 1px #aaa;
-    z-index: 1;
+    z-index: 0;
 }
 
 #superimpose
@@ -81,7 +80,7 @@ div.tooltip
     position: absolute;
     top: 520px;
     left: 700px;
-    z-index: 1;
+    z-index: 0;
 }
 
 .axis path,
