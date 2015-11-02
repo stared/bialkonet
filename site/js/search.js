@@ -16,7 +16,7 @@ d3.csv("data/metadata_crystals.csv", function(errorCSVcrystals, dataCSVcrystals)
   var rowTemplate = _.template(d3.select("#tableContent").html());
 
   dataCSV.forEach(function (d) {
-    d.search = [d.p_id, d.template_id, d.database, d.subtype, d.host, d.location, d.year].join(" ");
+    d.search = [d.p_id, d.template_id, d.database, d.subtype, d.host, d.location, d.year].join(" ").toLowerCase();
   });
   var table = dataCSV.map(rowTemplate).join("\n");
   d3.select("#resultTable tbody").html(table);
@@ -24,6 +24,7 @@ d3.csv("data/metadata_crystals.csv", function(errorCSVcrystals, dataCSVcrystals)
     // test http://jsperf.com/regexp-vs-indexof
     var hx = /H[x\d]+N[x\d]+/;
     var regexes = this.value
+      .toLowerCase()
       .split(" ")
       .map(function (s) {
         if (hx.test(s)) {
