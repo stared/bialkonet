@@ -16,7 +16,7 @@ d3.csv("data/metadata_crystals.csv", function(errorCSVcrystals, dataCSVcrystals)
   var rowTemplate = _.template(d3.select("#tableContent").html());
 
   dataCSV.forEach(function (d) {
-    d.search = [d.p_id, d.template_id, d.database, d.subtype, d.host, d.location, d.year].join(" ").toLowerCase();
+    d.search = [d.p_id, d.template_id, d.database, d.subtype, d.host, d.location, d.continent, d.year].join(" ").toLowerCase();
   });
   var table = dataCSV.map(rowTemplate).join("\n");
   d3.select("#resultTable tbody").html(table);

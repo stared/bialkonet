@@ -123,7 +123,7 @@ function DistanceGraph(domId) {
 
     this.nodes.forEach(function (d) {
       d.maintype = "H" + d.H;
-      d.search = [d.p_id, d.template_id, d.database, d.subtype, d.host, d.location, d.year].join(" ").toLowerCase();
+      d.search = [d.p_id, d.template_id, d.database, d.subtype, d.host, d.location, d.continent, d.year].join(" ").toLowerCase();
     });
 
     this.nodes.forEach(function (d) {
