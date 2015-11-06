@@ -43,6 +43,14 @@ div.tooltip
     z-index: 0;
 }
 
+#search {
+    position: absolute;
+    left: 50px;
+    top: 550px;
+    width: 400px;
+    z-index: 10; 
+}
+
 #structureViewer
 {
     position: absolute;

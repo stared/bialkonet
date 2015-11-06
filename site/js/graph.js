@@ -123,6 +123,7 @@ function DistanceGraph(domId) {
 
     this.nodes.forEach(function (d) {
       d.maintype = "H" + d.H;
+      d.search = [d.p_id, d.template_id, d.database, d.subtype, d.host, d.location, d.year].join(" ").toLowerCase();
     });
 
     this.nodes.forEach(function (d) {
@@ -176,6 +177,24 @@ function DistanceGraph(domId) {
     this.force.on("tick", function() {
         node.attr("cx", function(d) { return d.x; })
             .attr("cy", function(d) { return d.y; });
+    });
+
+    d3.select("#search").on("input", function () {
+      var hx = /H[x\d]+N[x\d]+/;
+      var regexes = this.value
+        .toLowerCase()
+        .split(" ")
+        .map(function (s) {
+          if (hx.test(s)) {
+            return new RegExp(s.replace(/x/g, "\\d+"));
+          } else {
+            return new RegExp(s);
+          }
+        });
+
+      node.style('opacity', function (d) {
+        return _.every(regexes, function (re) { return re.test(d.search); }) ? null : 0.1;
+      });
     });
 
     this.legend.node = node;
