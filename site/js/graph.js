@@ -126,7 +126,14 @@ function DistanceGraph(domId) {
     });
 
     this.nodes.forEach(function (d) {
-      d.yearNum = parseInt(d.year) || "N/A";
+      var year = parseInt(d.year);
+      if (!year) {
+        d.yearNum = "N/A";
+      } else if ((year < 2000) && (year > 1919)) {
+        d.yearNum = String(year).slice(0, 3) + "0s";
+      } else {
+        d.yearNum = String(year);
+      }
     });
 
     this.force = this.force
@@ -259,7 +266,8 @@ function GraphOptions(parentDom, optionList, legend){
       host_class: 'count',
       maintype: function (d) { return -d.H; },
       subtype: function (d) { return -d.H * 1000 - d.N; },
-      continent: 'count'
+      continent: 'count',
+      yearNum: function (d) { return parseInt(d.yearNum); },
     };
 
     options
