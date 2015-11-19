@@ -1,5 +1,5 @@
 /**
- * PV - WebGL protein viewer v1.7.0dev
+ * PV - WebGL protein viewer v1.8.1
  * http://biasmv.github.io/pv
  * 
  * Copyright 2013-2015 Marco Biasini
@@ -1433,7 +1433,7 @@ glMatrix = function () {
   return exports;
 }();
 color = function () {
-  'use strict';
+  
   var vec4 = glMatrix.vec4;
   var exports = {};
   exports.rgb = {};
@@ -2049,7 +2049,7 @@ color = function () {
   return exports;
 }();
 uniqueObjectIdPool = function () {
-  'use strict';
+  
   function ContinuousIdRange(pool, start, end) {
     this._pool = pool;
     this._start = start;
@@ -2132,7 +2132,7 @@ uniqueObjectIdPool = function () {
   return UniqueObjectIdPool;
 }();
 utils = function () {
-  'use strict';
+  
   var exports = {};
   exports.derive = function (subclass, baseclass, extensions) {
     for (var prop in baseclass.prototype) {
@@ -2305,7 +2305,7 @@ utils = function () {
   return exports;
 }();
 gfxCanvas = function () {
-  'use strict';
+  
   function isWebGLSupported(gl) {
     if (document.readyState !== 'complete' && document.readyState !== 'loaded' && document.readyState !== 'interactive') {
       console.error('isWebGLSupported only works after DOMContentLoaded');
@@ -2436,6 +2436,7 @@ gfxCanvas = function () {
       gl.shaderSource(shader, code);
       gl.compileShader(shader);
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.log(code);
         console.error(gl.getShaderInfoLog(shader));
         return null;
       }
@@ -2460,6 +2461,7 @@ gfxCanvas = function () {
       shaderProgram.colorAttrib = getAttribLoc(shaderProgram, 'attrColor');
       shaderProgram.normalAttrib = getAttribLoc(shaderProgram, 'attrNormal');
       shaderProgram.objIdAttrib = getAttribLoc(shaderProgram, 'attrObjId');
+      shaderProgram.selectAttrib = getAttribLoc(shaderProgram, 'attrSelect');
       shaderProgram.symId = getUniformLoc(shaderProgram, 'symId');
       shaderProgram.projection = getUniformLoc(shaderProgram, 'projectionMat');
       shaderProgram.modelview = getUniformLoc(shaderProgram, 'modelviewMat');
@@ -2469,6 +2471,10 @@ gfxCanvas = function () {
       shaderProgram.fogNear = getUniformLoc(shaderProgram, 'fogNear');
       shaderProgram.fogColor = getUniformLoc(shaderProgram, 'fogColor');
       shaderProgram.outlineColor = getUniformLoc(shaderProgram, 'outlineColor');
+      shaderProgram.outlineWidth = getUniformLoc(shaderProgram, 'outlineWidth');
+      shaderProgram.relativePixelSize = getUniformLoc(shaderProgram, 'relativePixelSize');
+      shaderProgram.screenDoorTransparency = getUniformLoc(shaderProgram, 'screenDoorTransparency');
+      shaderProgram.selectionColor = getUniformLoc(shaderProgram, 'selectionColor');
       shaderProgram.pointSize = getUniformLoc(shaderProgram, 'pointSize');
       shaderProgram.zoom = getUniformLoc(shaderProgram, 'zoom');
       return shaderProgram;
@@ -2530,7 +2536,7 @@ gfxCanvas = function () {
   };
 }();
 gfxFramebuffer = function () {
-  'use strict';
+  
   function FrameBuffer(gl, options) {
     this._width = options.width;
     this._height = options.height;
@@ -2603,7 +2609,7 @@ gfxFramebuffer = function () {
   return FrameBuffer;
 }();
 bufferAllocators = function () {
-  'use strict';
+  
   function PoolAllocator(bufferType) {
     this._freeArrays = [];
     this._bufferType = bufferType;
@@ -2632,7 +2638,7 @@ bufferAllocators = function () {
   return PoolAllocator;
 }();
 gfxCam = function () {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var mat4 = glMatrix.mat4;
   function Cam(gl) {
@@ -2649,8 +2655,11 @@ gfxCam = function () {
     this._fovY = Math.PI * 45 / 180;
     this._fogColor = vec3.fromValues(1, 1, 1);
     this._outlineColor = vec3.fromValues(0.1, 0.1, 0.1);
+    this._outlineWidth = 1;
+    this._selectionColor = vec3.fromValues(0.1, 1, 0.1);
     this._center = vec3.create();
     this._zoom = 50;
+    this._screenDoorTransparency = false;
     this._updateProjectionMat = true;
     this._updateModelViewMat = true;
     this._upsamplingFactor = 1;
@@ -2666,6 +2675,16 @@ gfxCam = function () {
         this._stateId = 0;
       }
     },
+    setScreenDoorTransparency: function (value) {
+      this._screenDoorTransparency = value;
+      this._incrementStateId();
+    },
+    setOutlineWidth: function (value) {
+      if (this._outlineWidth !== value) {
+        this._outlineWidth = value;
+        this._incrementStateId();
+      }
+    },
     setRotation: function (rot) {
       if (rot.length === 16) {
         mat4.copy(this._rotation, rot);
@@ -2678,7 +2697,16 @@ gfxCam = function () {
       return this._upsamplingFactor;
     },
     setUpsamplingFactor: function (val) {
-      this._upsamplingFactor = val;
+      if (this._upsamplingFactor !== val) {
+        this._incrementStateId();
+        this._upsamplingFactor = val;
+        var x = this._upsamplingFactor / this._width;
+        var y = this._upsamplingFactor / this._height;
+        this._relativePixelSize = new Float32Array([
+          x,
+          y
+        ]);
+      }
     },
     mainAxes: function () {
       return [
@@ -2735,6 +2763,10 @@ gfxCam = function () {
       this._updateProjectionMat = true;
       this._width = width;
       this._height = height;
+      this._relativePixelSize = new Float32Array([
+        this._upsamplingFactor / width,
+        this._upsamplingFactor / height
+      ]);
     },
     viewportWidth: function () {
       return this._width;
@@ -2852,6 +2884,15 @@ gfxCam = function () {
     currentShader: function () {
       return this._currentShader;
     },
+    invalidateCurrentShader: function () {
+      this._currentShader = null;
+    },
+    setOutlineColor: function (color) {
+      this._outlineColor = vec3.clone(color);
+    },
+    setSelectionColor: function (color) {
+      this._selectionColor = vec3.clone(color);
+    },
     bind: function (shader, additionalTransform) {
       var shaderChanged = false;
       var gl = this._gl;
@@ -2882,25 +2923,32 @@ gfxCam = function () {
       gl.uniform1f(shader.fogNear, this._fogNear + nearOffset);
       gl.uniform3fv(shader.fogColor, this._fogColor);
       gl.uniform3fv(shader.outlineColor, this._outlineColor);
+      gl.uniform3fv(shader.selectionColor, this._selectionColor);
+      gl.uniform2fv(shader.relativePixelSize, this._relativePixelSize);
+      gl.uniform1f(shader.outlineWidth, this._outlineWidth);
+      gl.uniform1i(shader.screenDoorTransparency, this._screenDoorTransparency);
     }
   };
   return Cam;
 }();
 gfxShaders = {
-  LINES_FS: '\nprecision ${PRECISION} float;\n\nvarying vec4 vertColor;\nvarying vec3 vertNormal;\nuniform float fogNear;\nuniform float fogFar;\nuniform vec3 fogColor;\nuniform bool fog;\n\nvoid main(void) {\n  gl_FragColor = vec4(vertColor);\n  if (gl_FragColor.a == 0.0) { discard; }\n  float depth = gl_FragCoord.z / gl_FragCoord.w;\n  if (fog) {\n    float fog_factor = smoothstep(fogNear, fogFar, depth);\n    gl_FragColor = mix(gl_FragColor, vec4(fogColor, gl_FragColor.w),\n                        fog_factor);\n  }\n}',
-  LINES_VS: '\nattribute vec3 attrPos;\nattribute vec4 attrColor;\n\nuniform mat4 projectionMat;\nuniform mat4 modelviewMat;\nvarying vec4 vertColor;\nuniform float pointSize;\nvoid main(void) {\n  gl_Position = projectionMat * modelviewMat * vec4(attrPos, 1.0);\n  float distToCamera = vec4(modelviewMat * vec4(attrPos, 1.0)).z;\n  gl_PointSize = pointSize * 200.0 / abs(distToCamera); \n  vertColor = attrColor;\n}',
-  HEMILIGHT_FS: '\nprecision ${PRECISION} float;\n\nvarying vec4 vertColor;\nvarying vec3 vertNormal;\nuniform float fogNear;\nuniform float fogFar;\nuniform vec3 fogColor;\nuniform bool fog;\n\nvoid main(void) {\n  float dp = dot(vertNormal, vec3(0.0, 0.0, 1.0));\n  float hemi = max(0.0, dp)*0.5+0.5;\n  hemi *= vertColor.a;\n  gl_FragColor = vec4(vertColor.rgb*hemi, vertColor.a);\n  if (gl_FragColor.a == 0.0) { discard; }\n  float depth = gl_FragCoord.z / gl_FragCoord.w;\n  if (fog) {\n    float fog_factor = smoothstep(fogNear, fogFar, depth);\n    gl_FragColor = mix(gl_FragColor, vec4(fogColor, gl_FragColor.w),\n                        fog_factor);\n  }\n}',
-  PHONG_FS: '\nprecision ${PRECISION} float;\n\nvarying vec4 vertColor;\nvarying vec3 vertNormal;\nvarying vec3 vertPos;\nuniform float fogNear;\nuniform float fogFar;\nuniform vec3 fogColor;\nuniform bool fog;\nuniform float zoom;\n\nvoid main(void) {\n  vec3 eyePos = vec3(0.0, 0.0, zoom);\n  float dp = dot(vertNormal, normalize(eyePos - vertPos));\n  float hemi = max(0.0, dp)*0.8+0.2;\n  hemi *= vertColor.a;\n  vec3 rgbColor = vertColor.rgb * hemi; \n  rgbColor += min(vertColor.rgb, 0.8) * pow(max(0.0, dp), 16.0);\n  //vec3 rgbColor = vertColor.rgb * hemi;\n  gl_FragColor = vec4(clamp(rgbColor, 0.0, 1.0), vertColor.a);\n  if (gl_FragColor.a == 0.0) { discard; }\n  float depth = gl_FragCoord.z / gl_FragCoord.w;\n  if (fog) {\n    float fog_factor = smoothstep(fogNear, fogFar, depth);\n    gl_FragColor = mix(gl_FragColor, vec4(fogColor, gl_FragColor.w),\n                        fog_factor);\n  }\n}',
-  HEMILIGHT_VS: '\nattribute vec3 attrPos;\nattribute vec4 attrColor;\nattribute vec3 attrNormal;\n\nuniform mat4 projectionMat;\nuniform mat4 modelviewMat;\nvarying vec4 vertColor;\nvarying vec3 vertNormal;\nvarying vec3 vertPos;\nvoid main(void) {\n  vertPos = (modelviewMat * vec4(attrPos, 1.0)).xyz;\n  gl_Position = projectionMat * modelviewMat * vec4(attrPos, 1.0);\n  vec4 n = (modelviewMat * vec4(attrNormal, 0.0));\n  vertNormal = n.xyz;\n  vertColor = attrColor;\n}',
-  OUTLINE_FS: '\nprecision ${PRECISION} float;\nvarying float vertAlpha;\n\nuniform vec3 outlineColor;\nuniform float fogNear;\nuniform float fogFar;\nuniform vec3 fogColor;\nuniform bool fog;\n\nvoid main() {\n  gl_FragColor = vec4(outlineColor, vertAlpha);\n  if (gl_FragColor.a == 0.0) { discard; }\n  float depth = gl_FragCoord.z / gl_FragCoord.w;\n  if (fog) { \n    float fog_factor = smoothstep(fogNear, fogFar, depth);\n    gl_FragColor = mix(gl_FragColor, vec4(fogColor, vertAlpha),\n                        fog_factor);\n  }\n}',
-  OUTLINE_VS: '\nprecision ${PRECISION} float;\n\nattribute vec3 attrPos;\nattribute vec3 attrNormal;\nattribute vec4 attrColor;\n                                                                       \nuniform vec3 outlineColor;\nuniform mat4 projectionMat;\nuniform mat4 modelviewMat;\nvarying float vertAlpha;\n\nvoid main(void) {\n  gl_Position = projectionMat * modelviewMat * vec4(attrPos, 1.0);\n  vec4 normal = modelviewMat * vec4(attrNormal, 0.0);\n  vertAlpha = attrColor.a;\n  gl_Position.xy += normal.xy*0.100;\n  gl_Position.z += gl_Position.w*0.0001;\n}',
-  TEXT_VS: '\nprecision ${PRECISION} float;\n\nattribute vec3 attrCenter;\nattribute vec2 attrCorner;\nuniform mat4 projectionMat;\nuniform mat4 modelviewMat;\nuniform mat4 rotationMat;\nvarying vec2 vertTex;\nuniform float width;\nuniform float height;\nvoid main() { \n  vec4 pos = modelviewMat* vec4(attrCenter, 1.0);\n  pos.z += 4.0;\n  gl_Position = projectionMat * pos;\n  gl_Position.xy += vec2(width,height)*attrCorner*gl_Position.w; \n  vertTex = (attrCorner+abs(attrCorner))/(2.0*abs(attrCorner)); \n}',
-  TEXT_FS: '\nprecision ${PRECISION} float;\n\nuniform mat4 projectionMat;\nuniform mat4 modelviewMat;\nuniform sampler2D sampler;\nuniform float xScale;\nuniform float yScale;\nvarying vec2 vertTex;\nvoid main() { \n  vec2 texCoord = vec2(vertTex.x*xScale, vertTex.y*yScale);\n  gl_FragColor = texture2D(sampler, texCoord);\n  if (gl_FragColor.a == 0.0) { discard; }\n}',
+  PRELUDE_FS: '\nprecision ${PRECISION} float;\nuniform bool screenDoorTransparency;\nvec4 handleAlpha(vec4 inColor) {\n  if (screenDoorTransparency) {\n    ivec2 pxCoord = ivec2(gl_FragCoord.xy);\n    ivec2 mod = pxCoord - (pxCoord/2) * 2;\n    if (inColor.a < 0.99 &&\n        (inColor.a < 0.01 || mod.x != 0 || mod.y != 0)) { discard; }\n    return vec4(inColor.rgb, 1.0);\n  } else {\n    if (inColor.a == 0.0) { discard; }\n    return inColor;\n  } \n} \nuniform vec3 selectionColor;\n\nvec3 handleSelect(vec3 inColor, float vertSelect) { \n  return mix(inColor, selectionColor, step(0.5, vertSelect) * 0.7); \n} \n\nuniform bool fog;\nuniform float fogNear;\nuniform float fogFar;\nuniform vec3 fogColor;\nvec3 handleFog(vec3 inColor) {\n  if (fog) {\n    float depth = gl_FragCoord.z / gl_FragCoord.w;\n    float fogFactor = smoothstep(fogNear, fogFar, depth);\n    return mix(inColor, fogColor, fogFactor);\n  } else {\n    return inColor;\n  }\n}',
+  LINES_FS: '\nvarying vec4 vertColor;\nvarying vec3 vertNormal;\n\nvoid main(void) {\n  gl_FragColor = handleAlpha(vertColor);\n  gl_FragColor.rgb = handleFog(gl_FragColor.rgb);\n}',
+  SELECT_LINES_FS: '\nprecision ${PRECISION} float;\n\nvarying float vertSelect;\nvarying vec3 vertNormal;\nuniform float fogNear;\nuniform float fogFar;\nuniform vec3 fogColor;\nuniform bool fog;\nuniform vec3 selectionColor;\n\nvoid main(void) {\n  gl_FragColor = mix(vec4(0.0, 0.0, 0.0, 0.0), vec4(selectionColor, 1.0), \n                     vertSelect);\n  gl_FragColor.a = step(0.5, vertSelect);\n  if (gl_FragColor.a == 0.0) { discard; }\n  float depth = gl_FragCoord.z / gl_FragCoord.w;\n  if (fog) {\n    float fog_factor = smoothstep(fogNear, fogFar, depth);\n    gl_FragColor = mix(gl_FragColor, vec4(fogColor, gl_FragColor.w),\n                        fog_factor);\n  }\n}',
+  SELECT_LINES_VS: '\nattribute vec3 attrPos;\nattribute float attrSelect;\n\nuniform mat4 projectionMat;\nuniform mat4 modelviewMat;\nuniform float pointSize;\nvarying float vertSelect;\nvoid main(void) {\n  gl_Position = projectionMat * modelviewMat * vec4(attrPos, 1.0);\n  gl_Position.z += gl_Position.w * 0.000001; \n  float distToCamera = vec4(modelviewMat * vec4(attrPos, 1.0)).z;\n  gl_PointSize = pointSize * 200.0 / abs(distToCamera); \n  vertSelect = attrSelect;\n}',
   SELECT_VS: '\nprecision ${PRECISION} float;\nuniform mat4 projectionMat;\nuniform mat4 modelviewMat;\nuniform float pointSize;\nattribute vec3 attrPos;\nattribute float attrObjId;\n\nvarying float objId;\n\nvoid main(void) {\n  gl_Position = projectionMat * modelviewMat * vec4(attrPos, 1.0);\n  float distToCamera = vec4(modelviewMat * vec4(attrPos, 1.0)).z;\n  gl_PointSize = pointSize * 200.0 / abs(distToCamera); \n  objId = attrObjId;\n}',
-  SELECT_FS: '\nprecision ${PRECISION} float;\n\nvarying float objId;\nuniform int symId;\n\nint intMod(int x, int y) { \n  int z = x/y;\n  return x-y*z;\n}\nvoid main(void) {\n  // ints are only required to be 7bit...\n  int integralObjId = int(objId+0.5);\n  int red = intMod(integralObjId, 256);\n  integralObjId/=256;\n  int green = intMod(integralObjId, 256);\n  integralObjId/=256;\n  int blue = intMod(integralObjId, 256);\n  int alpha = symId;\n  gl_FragColor = vec4(float(red), float(green), \n                      float(blue), float(alpha))/255.0;\n}'
+  SELECT_FS: '\nprecision ${PRECISION} float;\n\nvarying float objId;\nuniform int symId;\n\nint intMod(int x, int y) { \n  int z = x/y;\n  return x-y*z;\n}\nvoid main(void) {\n  // ints are only required to be 7bit...\n  int integralObjId = int(objId+0.5);\n  int red = intMod(integralObjId, 256);\n  integralObjId/=256;\n  int green = intMod(integralObjId, 256);\n  integralObjId/=256;\n  int blue = intMod(integralObjId, 256);\n  int alpha = symId;\n  gl_FragColor = vec4(float(red), float(green), \n                      float(blue), float(alpha))/255.0;\n}',
+  LINES_VS: '\nattribute vec3 attrPos;\nattribute vec4 attrColor;\n\nuniform mat4 projectionMat;\nuniform mat4 modelviewMat;\nvarying vec4 vertColor;\nuniform float pointSize;\nvoid main(void) {\n  gl_Position = projectionMat * modelviewMat * vec4(attrPos, 1.0);\n  float distToCamera = vec4(modelviewMat * vec4(attrPos, 1.0)).z;\n  gl_PointSize = pointSize * 200.0 / abs(distToCamera); \n  vertColor = attrColor;\n}',
+  HEMILIGHT_FS: '\nvarying vec4 vertColor;\nvarying vec3 vertNormal;\nvarying float vertSelect;\n\nvoid main(void) {\n  float dp = dot(vertNormal, vec3(0.0, 0.0, 1.0));\n  float hemi = min(1.0, max(0.0, dp)*0.6+0.5);\n  gl_FragColor = vec4(vertColor.rgb*hemi, vertColor.a);\n  gl_FragColor.rgb = handleFog(handleSelect(gl_FragColor.rgb, vertSelect));\n  gl_FragColor = handleAlpha(gl_FragColor);\n}',
+  PHONG_FS: '\nvarying vec4 vertColor;\nvarying vec3 vertNormal;\nvarying vec3 vertPos;\nuniform float zoom;\nvarying float vertSelect;\n\nvoid main(void) {\n  vec3 eyePos = vec3(0.0, 0.0, zoom);\n  float dp = dot(vertNormal, normalize(eyePos - vertPos));\n  float hemi = min(1.0, max(0.3, dp)+0.2);\n  //hemi *= vertColor.a;\n  vec3 rgbColor = vertColor.rgb * hemi; \n  rgbColor += min(vertColor.rgb, 0.8) * pow(max(0.0, dp), 18.0);\n  rgbColor = handleSelect(rgbColor, vertSelect);\n  gl_FragColor = vec4(clamp(rgbColor, 0.0, 1.0), vertColor.a);\n  gl_FragColor.rgb = handleFog(gl_FragColor.rgb);\n  gl_FragColor = handleAlpha(gl_FragColor);\n}',
+  HEMILIGHT_VS: '\nattribute vec3 attrPos;\nattribute vec4 attrColor;\nattribute vec3 attrNormal;\nattribute float attrSelect;\n\nuniform mat4 projectionMat;\nuniform mat4 modelviewMat;\nvarying vec4 vertColor;\nvarying vec3 vertNormal;\nvarying vec3 vertPos;\nvarying float vertSelect;\nvoid main(void) {\n  vertPos = (modelviewMat * vec4(attrPos, 1.0)).xyz;\n  gl_Position = projectionMat * modelviewMat * vec4(attrPos, 1.0);\n  vec4 n = (modelviewMat * vec4(attrNormal, 0.0));\n  vertNormal = n.xyz;\n  vertColor = attrColor;\n  vertSelect = attrSelect;\n}',
+  OUTLINE_FS: '\nvarying float vertAlpha;\nvarying float vertSelect;\n\nuniform vec3 outlineColor;\n\nvoid main() {\n  gl_FragColor = vec4(mix(outlineColor, selectionColor, \n                          step(0.5, vertSelect)), \n                      vertAlpha);\n  gl_FragColor.rgb = handleFog(gl_FragColor.rgb);\n  gl_FragColor = handleAlpha(gl_FragColor);\n}',
+  OUTLINE_VS: '\nprecision ${PRECISION} float;\n\nattribute vec3 attrPos;\nattribute vec3 attrNormal;\nattribute vec4 attrColor;\nattribute float attrSelect;\n\nuniform vec3 outlineColor;\nuniform mat4 projectionMat;\nuniform mat4 modelviewMat;\nvarying float vertAlpha;\nvarying float vertSelect;\nuniform vec2 relativePixelSize;\nuniform float outlineWidth;\n\nvoid main(void) {\n  gl_Position = projectionMat * modelviewMat * vec4(attrPos, 1.0);\n  vec4 normal = modelviewMat * vec4(attrNormal, 0.0);\n  vertAlpha = attrColor.a;\n  vertSelect = attrSelect;\n  vec2 expansion = relativePixelSize * \n       (outlineWidth + 2.0 * step(0.5, attrSelect));\n  vec2 offset = normal.xy * expansion;\n  gl_Position.xy += gl_Position.w * offset;\n}',
+  TEXT_VS: '\nprecision ${PRECISION} float;\n\nattribute vec3 attrCenter;\nattribute vec2 attrCorner;\nuniform mat4 projectionMat;\nuniform mat4 modelviewMat;\nuniform mat4 rotationMat;\nvarying vec2 vertTex;\nuniform float width;\nuniform float height;\nvoid main() { \n  vec4 pos = modelviewMat* vec4(attrCenter, 1.0);\n  pos.z += 4.0;\n  gl_Position = projectionMat * pos;\n  gl_Position.xy += vec2(width,height)*attrCorner*gl_Position.w; \n  vertTex = (attrCorner+abs(attrCorner))/(2.0*abs(attrCorner)); \n}',
+  TEXT_FS: '\nprecision ${PRECISION} float;\n\nuniform mat4 projectionMat;\nuniform mat4 modelviewMat;\nuniform sampler2D sampler;\nuniform float xScale;\nuniform float yScale;\nvarying vec2 vertTex;\nvoid main() { \n  vec2 texCoord = vec2(vertTex.x*xScale, vertTex.y*yScale);\n  gl_FragColor = texture2D(sampler, texCoord);\n  if (gl_FragColor.a == 0.0) { discard; }\n}'
 };
 touch = function () {
-  'use strict';
+  
   function TouchHandler(element, viewer, cam) {
     this._element = element;
     this._element.addEventListener('touchmove', utils.bind(this, this._touchMove));
@@ -3030,13 +3078,14 @@ touch = function () {
   return TouchHandler;
 }();
 mouse = function () {
-  'use strict';
+  
   function MouseHandler(canvas, viewer, cam, animationTime) {
     this._viewer = viewer;
     this._canvas = canvas;
     this._cam = cam;
     this._canvas = canvas;
     this._animationTime = animationTime;
+    this._lastMouseUpTime = null;
     this._init();
   }
   MouseHandler.prototype = {
@@ -3046,8 +3095,18 @@ mouse = function () {
       }
       this._viewer.setCenter(picked.pos(), this._animationTime);
     },
-    _mouseUp: function () {
+    _mouseUp: function (event) {
       var canvas = this._canvas;
+      var currentTime = new Date().getTime();
+      if ((this._lastMouseUpTime === null || currentTime - this._lastMouseUpTime > 300) & currentTime - this._lastMouseDownTime < 300) {
+        var rect = this._canvas.domElement().getBoundingClientRect();
+        var picked = this._viewer.pick({
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top
+        });
+        this._viewer._dispatchEvent(event, 'click', picked);
+      }
+      this._lastMouseUpTime = currentTime;
       canvas.removeEventListener('mousemove', this._mouseRotateListener);
       canvas.removeEventListener('mousemove', this._mousePanListener);
       canvas.removeEventListener('mouseup', this._mouseUpListener);
@@ -3092,16 +3151,7 @@ mouse = function () {
       if (event.button !== 0) {
         return;
       }
-      var currentTime = new Date().getTime();
-      if (typeof this.lastClickTime === 'undefined' || currentTime - this.lastClickTime > 300) {
-        this.lastClickTime = currentTime;
-        var rect = this._canvas.domElement().getBoundingClientRect();
-        var picked = this._viewer.pick({
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top
-        });
-        this._viewer._dispatchEvent(event, 'click', picked);
-      }
+      this._lastMouseDownTime = new Date().getTime();
       event.preventDefault();
       if (event.shiftKey === true) {
         this._canvas.on('mousemove', this._mousePanListener);
@@ -3150,7 +3200,7 @@ mouse = function () {
   return MouseHandler;
 }();
 geom = function () {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var vec4 = glMatrix.vec4;
   var mat3 = glMatrix.mat3;
@@ -3365,6 +3415,23 @@ geom = function () {
       rotation[8] = tangent[2];
     };
   }();
+  function interpolateScalars(values, num) {
+    var out = new Float32Array(num * (values.length - 1) + 1);
+    var index = 0;
+    var bf = 0, af = 0;
+    var delta = 1 / num;
+    for (var i = 0; i < values.length - 1; ++i) {
+      bf = values[i];
+      af = values[i + 1];
+      for (var j = 0; j < num; ++j) {
+        var t = delta * j;
+        out[index + 0] = bf * (1 - t) + af * t;
+        index += 1;
+      }
+    }
+    out[index + 0] = af;
+    return out;
+  }
   return {
     signedAngle: signedAngle,
     axisRotation: axisRotation,
@@ -3372,13 +3439,14 @@ geom = function () {
     diagonalizer: diagonalizer,
     catmullRomSpline: catmullRomSpline,
     cubicHermiteInterpolate: cubicHermiteInterpolate,
+    interpolateScalars: interpolateScalars,
     catmullRomSplineNumPoints: catmullRomSplineNumPoints,
     Sphere: Sphere,
     buildRotation: buildRotation
   };
 }();
 gfxGeomBuilders = function () {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   function ProtoSphere(stacks, arcs) {
     this._arcs = arcs;
@@ -3561,7 +3629,7 @@ gfxGeomBuilders = function () {
   };
 }();
 gfxSceneNode = SceneNode = function () {
-  'use strict';
+  
   function SceneNode(gl) {
     this._children = [];
     this._visible = true;
@@ -3608,7 +3676,7 @@ gfxSceneNode = SceneNode = function () {
   return SceneNode;
 }();
 gfxBaseGeom = BaseGeom = function () {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   function eachCentralAtomAsym(structure, callback) {
     structure.eachResidue(function (residue) {
@@ -3647,6 +3715,7 @@ gfxBaseGeom = BaseGeom = function () {
     this._idRanges = [];
     this._vertAssocs = [];
     this._showRelated = null;
+    this._selection = null;
   }
   utils.derive(BaseGeom, SceneNode, {
     setShowRelated: function (rel) {
@@ -3818,12 +3887,27 @@ gfxBaseGeom = BaseGeom = function () {
         this._vertAssocs[i].setOpacity(val, view);
       }
       console.timeEnd('BaseGeom.setOpacity');
+    },
+    setSelection: function (view) {
+      console.time('BaseGeom.setSelection');
+      this._selection = view;
+      this._ready = false;
+      for (var i = 0; i < this._vertAssocs.length; ++i) {
+        this._vertAssocs[i].setSelection(view);
+      }
+      console.timeEnd('BaseGeom.setSelection');
+    },
+    selection: function () {
+      if (this._selection === null) {
+        this._selection = this.structure().createEmptyView();
+      }
+      return this._selection;
     }
   });
   return BaseGeom;
 }();
 gfxVertexArrayBase = VertexArrayBase = function () {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   function VertexArrayBase(gl, numVerts, float32Allocator) {
     this._gl = gl;
@@ -3854,6 +3938,11 @@ gfxVertexArrayBase = VertexArrayBase = function () {
     setOpacity: function (index, a) {
       var colorStart = index * this._FLOATS_PER_VERT + this._COLOR_OFFSET;
       this._vertData[colorStart + 3] = a;
+      this._ready = false;
+    },
+    setSelected: function (index, a) {
+      var selected = index * this._FLOATS_PER_VERT + this._SELECT_OFFSET;
+      this._vertData[selected] = a;
       this._ready = false;
     },
     boundingSphere: function () {
@@ -3940,17 +4029,18 @@ gfxVertexArrayBase = VertexArrayBase = function () {
   return VertexArrayBase;
 }();
 gfxVertexArray = function () {
-  'use strict';
+  
   function VertexArray(gl, numVerts, float32Allocator) {
     VertexArrayBase.call(this, gl, numVerts, float32Allocator);
     this._numVerts = 0;
     this._primitiveType = this._gl.LINES;
   }
   utils.derive(VertexArray, VertexArrayBase, {
-    _FLOATS_PER_VERT: 8,
+    _FLOATS_PER_VERT: 9,
     _POS_OFFSET: 0,
     _COLOR_OFFSET: 3,
     _ID_OFFSET: 7,
+    _SELECT_OFFSET: 8,
     numVerts: function () {
       return this._numVerts;
     },
@@ -3971,9 +4061,10 @@ gfxVertexArray = function () {
       this._vertData[index++] = color[2];
       this._vertData[index++] = color[3];
       this._vertData[index++] = id;
+      this._vertData[index++] = 0;
       this._numVerts += 1;
       this._ready = false;
-      this._boundingSpehre = null;
+      this._boundingSphere = null;
     },
     addLine: function (startPos, startColor, endPos, endColor, idOne, idTwo) {
       this.addPoint(startPos, startColor, idOne);
@@ -3990,6 +4081,10 @@ gfxVertexArray = function () {
         this._gl.vertexAttribPointer(shader.objIdAttrib, 1, this._gl.FLOAT, false, this._FLOATS_PER_VERT * 4, this._ID_OFFSET * 4);
         this._gl.enableVertexAttribArray(shader.objIdAttrib);
       }
+      if (shader.selectAttrib !== -1) {
+        this._gl.vertexAttribPointer(shader.selectAttrib, 1, this._gl.FLOAT, false, this._FLOATS_PER_VERT * 4, this._SELECT_OFFSET * 4);
+        this._gl.enableVertexAttribArray(shader.selectAttrib);
+      }
     },
     releaseAttribs: function (shader) {
       this._gl.disableVertexAttribArray(shader.posAttrib);
@@ -3998,6 +4093,9 @@ gfxVertexArray = function () {
       }
       if (shader.objIdAttrib !== -1) {
         this._gl.disableVertexAttribArray(shader.objIdAttrib);
+      }
+      if (shader.selectAttrib !== -1) {
+        this._gl.disableVertexAttribArray(shader.selectAttrib);
       }
     },
     bind: function (shader) {
@@ -4011,7 +4109,7 @@ gfxVertexArray = function () {
   return VertexArray;
 }();
 gfxIndexedVertexArray = IndexedVertexArray = function () {
-  'use strict';
+  
   function IndexedVertexArray(gl, numVerts, numIndices, float32Allocator, uint16Allocator) {
     VertexArrayBase.call(this, gl, numVerts, float32Allocator);
     this._indexBuffer = gl.createBuffer();
@@ -4067,13 +4165,16 @@ gfxIndexedVertexArray = IndexedVertexArray = function () {
       this._vertData[i++] = color[2];
       this._vertData[i++] = color[3];
       this._vertData[i++] = objId;
+      this._vertData[i++] = 0;
       this._numVerts += 1;
       this._ready = false;
     },
-    _FLOATS_PER_VERT: 11,
-    _BYTES_PER_VERT: 11 * 4,
+    _FLOATS_PER_VERT: 12,
+    _BYTES_PER_VERT: 12 * 4,
     _OBJID_OFFSET: 10,
     _OBJID_BYTE_OFFSET: 10 * 4,
+    _SELECT_OFFSET: 11,
+    _SELECT_BYTE_OFFSET: 11 * 4,
     _COLOR_OFFSET: 6,
     _COLOR_BYTE_OFFSET: 6 * 4,
     _NORMAL_OFFSET: 3,
@@ -4118,6 +4219,10 @@ gfxIndexedVertexArray = IndexedVertexArray = function () {
         gl.vertexAttribPointer(shader.objIdAttrib, 1, gl.FLOAT, false, byteStride, this._OBJID_BYTE_OFFSET);
         gl.enableVertexAttribArray(shader.objIdAttrib);
       }
+      if (shader.selectAttrib !== -1) {
+        gl.vertexAttribPointer(shader.selectAttrib, 1, gl.FLOAT, false, byteStride, this._SELECT_BYTE_OFFSET);
+        gl.enableVertexAttribArray(shader.selectAttrib);
+      }
     },
     releaseAttribs: function (shader) {
       var gl = this._gl;
@@ -4130,6 +4235,9 @@ gfxIndexedVertexArray = IndexedVertexArray = function () {
       }
       if (shader.objIdAttrib !== -1) {
         gl.disableVertexAttribArray(shader.objIdAttrib);
+      }
+      if (shader.selectAttrib !== -1) {
+        gl.disableVertexAttribArray(shader.selectAttrib);
       }
     },
     bind: function (shader) {
@@ -4144,7 +4252,7 @@ gfxIndexedVertexArray = IndexedVertexArray = function () {
   return IndexedVertexArray;
 }();
 gfxChainData = function (VertexArray) {
-  'use strict';
+  
   function LineChainData(chain, gl, numVerts, float32Allocator) {
     VertexArray.call(this, gl, numVerts, float32Allocator);
     this._chain = chain;
@@ -4179,7 +4287,7 @@ gfxChainData = function (VertexArray) {
   };
 }(gfxVertexArray);
 gfxMeshGeom = function (cd, IndexedVertexArray) {
-  'use strict';
+  
   var MeshChainData = cd.MeshChainData;
   function MeshGeom(gl, float32Allocator, uint16Allocator) {
     BaseGeom.call(this, gl);
@@ -4286,13 +4394,13 @@ gfxMeshGeom = function (cd, IndexedVertexArray) {
   return MeshGeom;
 }(gfxChainData, gfxIndexedVertexArray);
 gfxLineGeom = function (chainData) {
-  'use strict';
+  
   var LineChainData = chainData.LineChainData;
   function LineGeom(gl, float32Allocator) {
     BaseGeom.call(this, gl);
     this._vertArrays = [];
     this._float32Allocator = float32Allocator;
-    this._lineWidth = 1;
+    this._lineWidth = 0.5;
     this._pointSize = 1;
   }
   utils.derive(LineGeom, BaseGeom, {
@@ -4312,12 +4420,10 @@ gfxLineGeom = function (chainData) {
     },
     shaderForStyleAndPass: function (shaderCatalog, style, pass) {
       if (pass === 'outline') {
-        return null;
+        return shaderCatalog.selectLines;
       }
       if (pass === 'select') {
         return shaderCatalog.select;
-      }
-      if (pass === 'glow') {
       }
       return shaderCatalog.lines;
     },
@@ -4329,18 +4435,27 @@ gfxLineGeom = function (chainData) {
       this._vertArrays = [];
     },
     _drawVertArrays: function (cam, shader, vertArrays, additionalTransforms) {
-      this._gl.lineWidth(this._lineWidth * cam.upsamplingFactor());
-      if (shader.pointSize) {
-        this._gl.uniform1f(shader.pointSize, this._pointSize * cam.upsamplingFactor());
+      var pointSizeMul = cam.upsamplingFactor();
+      if (shader.selectAttrib !== -1) {
+        pointSizeMul = 4 * cam.upsamplingFactor();
       }
       var i;
       if (additionalTransforms) {
+        cam.bind(shader);
+        this._gl.lineWidth(pointSizeMul * this._lineWidth);
+        if (shader.pointSize) {
+          this._gl.uniform1f(shader.pointSize, pointSizeMul * this._pointSize);
+        }
         for (i = 0; i < vertArrays.length; ++i) {
           vertArrays[i].drawSymmetryRelated(cam, shader, additionalTransforms);
         }
       } else {
-        this._gl.uniform1i(shader.symId, 255);
         cam.bind(shader);
+        this._gl.lineWidth(pointSizeMul * this._lineWidth);
+        this._gl.uniform1i(shader.symId, 255);
+        if (shader.pointSize) {
+          this._gl.uniform1f(shader.pointSize, pointSizeMul * this._pointSize);
+        }
         for (i = 0; i < vertArrays.length; ++i) {
           vertArrays[i].bind(shader);
           vertArrays[i].draw();
@@ -4355,7 +4470,7 @@ gfxLineGeom = function (chainData) {
   return LineGeom;
 }(gfxChainData);
 gfxVertAssoc = function () {
-  'use strict';
+  
   function AtomVertexAssoc(structure, callColoringBeginEnd) {
     this._structure = structure;
     this._assocs = [];
@@ -4404,6 +4519,21 @@ gfxVertAssoc = function () {
         }
       }
       return null;
+    },
+    setSelection: function (view) {
+      var atomMap = {};
+      view.eachAtom(function (atom) {
+        atomMap[atom.index()] = true;
+      });
+      for (var i = 0; i < this._assocs.length; ++i) {
+        var assoc = this._assocs[i];
+        var ai = atomMap[assoc.atom.index()];
+        var selected = ai !== true ? 0 : 1;
+        var va = assoc.vertexArray;
+        for (var j = assoc.vertStart; j < assoc.vertEnd; ++j) {
+          va.setSelected(j, selected);
+        }
+      }
     },
     setOpacity: function (val, view) {
       var atomMap = {};
@@ -4505,6 +4635,36 @@ gfxVertAssoc = function () {
       }
       return null;
     },
+    setSelection: function (view) {
+      var selData = [];
+      var i, j;
+      var traces = this._structure.backboneTraces();
+      for (i = 0; i < traces.length; ++i) {
+        var data = new Float32Array(this._perResidueColors[i].length);
+        var index = 0;
+        var trace = traces[i];
+        for (j = 0; j < trace.length(); ++j) {
+          var selected = view.containsResidue(trace.residueAt(j)) ? 1 : 0;
+          data[index] = selected;
+          index += 1;
+        }
+        if (this._interpolation > 1) {
+          selData.push(geom.interpolateScalars(data, this._interpolation));
+        } else {
+          selData.push(data);
+        }
+      }
+      for (i = 0; i < this._assocs.length; ++i) {
+        var assoc = this._assocs[i];
+        var ai = assoc.slice;
+        var sel = selData[assoc.traceIndex];
+        var a = sel[ai];
+        var va = assoc.vertexArray;
+        for (j = assoc.vertStart; j < assoc.vertEnd; ++j) {
+          va.setSelected(j, a);
+        }
+      }
+    },
     setOpacity: function (val, view) {
       var colorData = [];
       var i, j;
@@ -4545,7 +4705,7 @@ gfxVertAssoc = function () {
   };
 }();
 gfxRender = function (geomBuilders, MeshGeom, LineGeom, vertAssoc) {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var vec4 = glMatrix.vec4;
   var mat3 = glMatrix.mat3;
@@ -5615,7 +5775,7 @@ gfxLabel = function () {
   return TextLabel;
 }();
 gfxCustomMesh = function (gb) {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var mat3 = glMatrix.mat3;
   var forceRGB = color.forceRGB;
@@ -5631,7 +5791,7 @@ gfxCustomMesh = function (gb) {
     },
     addVertex: function (pos, normal, color, objId) {
       this._numVerts += 1;
-      this._vertData.push(pos[0], pos[1], pos[2], normal[0], normal[1], normal[2], color[0], color[1], color[2], color[3], objId);
+      this._vertData.push(pos[0], pos[1], pos[2], normal[0], normal[1], normal[2], color[0], color[1], color[2], color[3], objId, 0);
     },
     addTriangle: function (indexOne, indexTwo, indexThree) {
       this._indexData.push(indexOne, indexTwo, indexThree);
@@ -5795,7 +5955,7 @@ gfxCustomMesh = function (gb) {
   return CustomMesh;
 }(gfxGeomBuilders);
 gfxAnimation = function () {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var quat = glMatrix.quat;
   var mat3 = glMatrix.mat3;
@@ -5971,7 +6131,7 @@ gfxAnimation = function () {
   };
 }();
 slab = function () {
-  'use strict';
+  
   function Slab(near, far) {
     this.near = near;
     this.far = far;
@@ -6013,7 +6173,7 @@ slab = function () {
   };
 }();
 viewer = function (UniqueObjectIdPool, canvas, FrameBuffer, PoolAllocator, Cam, shaders, TouchHandler, MouseHandler, render, TextLabel, CustomMesh, anim) {
-  'use strict';
+  
   var WEBGL_NOT_SUPPORTED = '<div style="vertical-align:middle; text-align:center;"><h1>WebGL not supported</h1><p>Your browser does not support WebGL. You might want to try Chrome, Firefox, IE 11, or newer versions of Safari</p><p>If you are using a recent version of one of the above browsers, your graphic card might be blocked. Check the browser documentation for details on how to unblock it.</p></div>';
   var vec3 = glMatrix.vec3;
   var mat4 = glMatrix.mat4;
@@ -6076,6 +6236,7 @@ viewer = function (UniqueObjectIdPool, canvas, FrameBuffer, PoolAllocator, Cam, 
     this._rockAndRoll = null;
     this.listenerMap = {};
     this._animControl = new anim.AnimationControl();
+    this._initKeyboardInput();
     this._initCanvas();
     this.quality(this._options.quality);
     if (this._options.click !== null) {
@@ -6137,10 +6298,14 @@ viewer = function (UniqueObjectIdPool, canvas, FrameBuffer, PoolAllocator, Cam, 
         background: color.forceRGB(opts.background || 'white'),
         slabMode: slabModeToStrategy(opts.slabMode),
         outline: optValue(opts, 'outline', true),
+        outlineColor: color.forceRGB(optValue(opts, 'outlineColor', 'black')),
+        outlineWidth: optValue(opts, 'outlineWidth', 1.5),
+        selectionColor: color.forceRGB(optValue(opts, 'selectionColor', '#3f3')),
         fov: optValue(opts, 'fov', 45),
         doubleClick: getDoubleClickHandler(opts),
         click: getClickHandler(opts),
-        fog: optValue(opts, 'fog', true)
+        fog: optValue(opts, 'fog', true),
+        transparency: optValue(opts, 'transparency', 'alpha')
       };
       var parentRect = domElement.getBoundingClientRect();
       if (options.width === 'auto') {
@@ -6181,17 +6346,22 @@ viewer = function (UniqueObjectIdPool, canvas, FrameBuffer, PoolAllocator, Cam, 
     },
     options: function (optName, value) {
       if (value !== undefined) {
+        this._options[optName] = value;
         if (optName === 'fog') {
           this._cam.fog(value);
-          this._options.fog = value;
           this.requestRedraw();
         } else if (optName === 'fov') {
-          this._options.fov = value;
           this._cam.setFieldOfViewY(value * Math.PI / 180);
-        } else {
-          this._options[optName] = value;
+        } else if (optName === 'selectionColor') {
+          this._cam.setSelectionColor(color.forceRGB(value));
+        } else if (optName === 'outlineColor') {
+          this._cam.setOutlineColorColor(color.forceRGB(value));
+        } else if (optName === 'outlineWidth') {
+          this._cam.setOutlineWidth(value + 0);
+        } else if (optName === 'transparency') {
+          var sd = value === 'screendoor';
+          this._cam.setScreenDoorTransparency(sd);
         }
-        return value;
       }
       return this._options[optName];
     },
@@ -6241,18 +6411,24 @@ viewer = function (UniqueObjectIdPool, canvas, FrameBuffer, PoolAllocator, Cam, 
       this._uint16Allocator = new PoolAllocator(Uint16Array);
       this._cam = new Cam(this._canvas.gl());
       this._cam.setUpsamplingFactor(this._canvas.superSamplingFactor());
+      this._cam.setOutlineWidth(this._options.outlineWidth);
+      var sd = this._options.transparency === 'screendoor';
+      this._cam.setScreenDoorTransparency(sd);
       this._cam.fog(this._options.fog);
       this._cam.setFogColor(this._options.background);
+      this._cam.setOutlineColor(this._options.outlineColor);
+      this._cam.setSelectionColor(this._options.selectionColor);
       this._cam.setFieldOfViewY(this._options.fov * Math.PI / 180);
       this._mouseHandler.setCam(this._cam);
       var c = this._canvas;
       var p = shouldUseHighPrecision() ? 'highp' : 'mediump';
       this._shaderCatalog = {
-        hemilight: c.initShader(shaders.HEMILIGHT_VS, shaders.HEMILIGHT_FS, p),
-        phong: c.initShader(shaders.HEMILIGHT_VS, shaders.PHONG_FS, p),
-        outline: c.initShader(shaders.OUTLINE_VS, shaders.OUTLINE_FS, p),
-        lines: c.initShader(shaders.LINES_VS, shaders.LINES_FS, p),
+        hemilight: c.initShader(shaders.HEMILIGHT_VS, shaders.PRELUDE_FS + shaders.HEMILIGHT_FS, p),
+        phong: c.initShader(shaders.HEMILIGHT_VS, shaders.PRELUDE_FS + shaders.PHONG_FS, p),
+        outline: c.initShader(shaders.OUTLINE_VS, shaders.PRELUDE_FS + shaders.OUTLINE_FS, p),
+        lines: c.initShader(shaders.LINES_VS, shaders.PRELUDE_FS + shaders.LINES_FS, p),
         text: c.initShader(shaders.TEXT_VS, shaders.TEXT_FS, p),
+        selectLines: c.initShader(shaders.SELECT_LINES_VS, shaders.SELECT_LINES_FS, p),
         select: c.initShader(shaders.SELECT_VS, shaders.SELECT_FS, p)
       };
       this._boundDraw = utils.bind(this, this._draw);
@@ -6278,6 +6454,17 @@ viewer = function (UniqueObjectIdPool, canvas, FrameBuffer, PoolAllocator, Cam, 
         this._objects[i].draw(this._cam, this._shaderCatalog, this._options.style, pass);
       }
     },
+    _initKeyboardInput: function () {
+      var zeroSizedDiv = document.createElement('div');
+      zeroSizedDiv.setAttribute('style', 'overflow:hidden;width:0;height:0');
+      this._keyInput = document.createElement('textarea');
+      this._domElement.appendChild(zeroSizedDiv);
+      zeroSizedDiv.appendChild(this._keyInput);
+      this._keyInput.focus();
+    },
+    focus: function () {
+      this._keyInput.focus();
+    },
     _initCanvas: function () {
       var canvasOptions = {
         antialias: this._options.antialias,
@@ -6290,6 +6477,10 @@ viewer = function (UniqueObjectIdPool, canvas, FrameBuffer, PoolAllocator, Cam, 
       this._textureCanvas.style.display = 'none';
       this._domElement.appendChild(this._textureCanvas);
       this._mouseHandler = new MouseHandler(this._canvas, this, this._cam, this._options.animateTime);
+      this._canvas.domElement().addEventListener('mousedown', utils.bind(this, this._gainFocus));
+    },
+    _gainFocus: function () {
+      this._keyInput.focus();
     },
     setRotation: function (rotation, ms) {
       ms |= 0;
@@ -6373,19 +6564,24 @@ viewer = function (UniqueObjectIdPool, canvas, FrameBuffer, PoolAllocator, Cam, 
       this._objects = [];
     },
     addListener: function (eventName, callback) {
-      var callbacks = this.listenerMap[eventName];
-      if (typeof callbacks === 'undefined') {
-        callbacks = [];
-        this.listenerMap[eventName] = callbacks;
-      }
-      if (callback === 'center') {
-        var cb = utils.bind(this._mouseHandler, this._mouseHandler._centerOnClicked);
-        callbacks.push(cb);
+      if (eventName === 'keypress' || eventName === 'keydown' || eventName === 'keyup') {
+        console.log('keypress');
+        this._keyInput.addEventListener(eventName, callback, false);
       } else {
-        callbacks.push(callback);
-      }
-      if (this._initialized && eventName === 'viewerReady') {
-        callback(this, null);
+        var callbacks = this.listenerMap[eventName];
+        if (typeof callbacks === 'undefined') {
+          callbacks = [];
+          this.listenerMap[eventName] = callbacks;
+        }
+        if (callback === 'center') {
+          var cb = utils.bind(this._mouseHandler, this._mouseHandler._centerOnClicked);
+          callbacks.push(cb);
+        } else {
+          callbacks.push(callback);
+        }
+        if (this._initialized && eventName === 'viewerReady') {
+          callback(this, null);
+        }
       }
     },
     _dispatchEvent: function (event, newEventName, arg) {
@@ -6529,6 +6725,17 @@ viewer = function (UniqueObjectIdPool, canvas, FrameBuffer, PoolAllocator, Cam, 
       var obj = render.trace(structure, this._canvas.gl(), options);
       return this.add(name, obj);
     },
+    _updateProjectionIntervals: function (axes, intervals, structure) {
+      structure.eachAtom(function (atom) {
+        var pos = atom.pos();
+        for (var i = 0; i < 3; ++i) {
+          intervals[i].update(vec3.dot(pos, axes[i]));
+        }
+      });
+      for (var i = 0; i < 3; ++i) {
+        intervals[i].extend(1.5);
+      }
+    },
     fitTo: function (what) {
       var axes = this._cam.mainAxes();
       var intervals = [
@@ -6539,14 +6746,10 @@ viewer = function (UniqueObjectIdPool, canvas, FrameBuffer, PoolAllocator, Cam, 
       if (what instanceof SceneNode) {
         what.updateProjectionIntervals(axes[0], axes[1], axes[2], intervals[0], intervals[1], intervals[2]);
       } else if (what.eachAtom !== undefined) {
-        what.eachAtom(function (atom) {
-          var pos = atom.pos();
-          for (var i = 0; i < 3; ++i) {
-            intervals[i].update(vec3.dot(pos, axes[i]));
-          }
-        });
-        for (var i = 0; i < 3; ++i) {
-          intervals[i].extend(1.5);
+        this._updateProjectionIntervals(axes, intervals, what);
+      } else if (what.length !== undefined) {
+        for (var i = 0; i < what.length; ++i) {
+          this._updateProjectionIntervals(axes, intervals, what[i]);
         }
       }
       this._fitToIntervals(axes, intervals);
@@ -6796,7 +6999,7 @@ viewer = function (UniqueObjectIdPool, canvas, FrameBuffer, PoolAllocator, Cam, 
   };
 }(uniqueObjectIdPool, gfxCanvas, gfxFramebuffer, bufferAllocators, gfxCam, gfxShaders, touch, mouse, gfxRender, gfxLabel, gfxCustomMesh, gfxAnimation);
 molSymmetry = function () {
-  'use strict';
+  
   function SymGenerator(chains, matrices) {
     this._chains = chains || [];
     this._matrices = matrices || [];
@@ -6842,7 +7045,7 @@ molSymmetry = function () {
   };
 }();
 molAtom = function () {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   function AtomBase() {
   }
@@ -6978,7 +7181,7 @@ molAtom = function () {
   };
 }();
 molResidue = function (atom) {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var Atom = atom.Atom;
   var AtomView = atom.AtomView;
@@ -7110,9 +7313,25 @@ molResidue = function (atom) {
     this._residue = residue;
   }
   utils.derive(ResidueView, ResidueBase, {
-    addAtom: function (atom) {
+    addAtom: function (atom, checkDuplicates) {
+      if (checkDuplicates) {
+        for (var i = 0; i < this._atoms.length; ++i) {
+          var ai = this._atoms[i];
+          if (ai.index() === atom.index()) {
+            return ai;
+          }
+        }
+      }
       var atomView = new AtomView(this, atom.full());
       this._atoms.push(atomView);
+      return atomView;
+    },
+    removeAtom: function (atom) {
+      var lengthBefore = this._atoms.length;
+      this._atoms = this._atoms.filter(function (a) {
+        return a.index() !== atom.index();
+      });
+      return lengthBefore !== this._atoms.length;
     },
     full: function () {
       return this._residue;
@@ -7160,7 +7379,7 @@ molResidue = function (atom) {
   };
 }(molAtom);
 molTrace = function () {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   function BackboneTrace() {
     this._trace = [];
@@ -7327,7 +7546,7 @@ molTrace = function () {
   };
 }();
 molChain = function (residue, trace) {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var Residue = residue.Residue;
   var ResidueView = residue.ResidueView;
@@ -7558,10 +7777,31 @@ molChain = function (residue, trace) {
       if (recurse) {
         var atoms = residue.atoms();
         for (var i = 0; i < atoms.length; ++i) {
-          resView.addAtom(atoms[i].full());
+          resView.addAtom(atoms[i].full(), false);
         }
       }
       return resView;
+    },
+    addAtom: function (atom) {
+      var resView = this._residueMap[atom.residue().full().index()];
+      if (resView === undefined) {
+        resView = this.addResidue(atom.residue());
+      }
+      return resView.addAtom(atom, true);
+    },
+    removeAtom: function (atom, removeEmptyResidues) {
+      var resView = this._residueMap[atom.residue().full().index()];
+      if (resView === undefined) {
+        return false;
+      }
+      var removed = resView.removeAtom(atom);
+      if (removed && resView.atoms().length === 0 && removeEmptyResidues) {
+        delete this._residueMap[atom.residue().full().index()];
+        this._residues = this._residues.filter(function (r) {
+          return r !== resView;
+        });
+      }
+      return removed;
     },
     containsResidue: function (residue) {
       var resView = this._residueMap[residue.full().index()];
@@ -7602,7 +7842,7 @@ molChain = function (residue, trace) {
   };
 }(molResidue, molTrace);
 molBond = function () {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var Bond = function (atom_a, atom_b) {
     var self = {
@@ -7785,7 +8025,7 @@ molSelect = function () {
   return { dict: dictSelect };
 }();
 molMol = mol = function (chain, bond, select) {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var Chain = chain.Chain;
   var ChainView = chain.ChainView;
@@ -8262,6 +8502,29 @@ molMol = mol = function (chain, bond, select) {
       }
       return chainView;
     },
+    addAtom: function (atom) {
+      var chain = this.chain(atom.residue().chain().name());
+      if (chain === null) {
+        chain = this.addChain(atom.residue().chain());
+      }
+      return chain.addAtom(atom);
+    },
+    removeAtom: function (atom, removeEmptyResiduesAndChains) {
+      if (atom === null) {
+        return false;
+      }
+      var chain = this.chain(atom.residue().chain().name());
+      if (chain === null) {
+        return false;
+      }
+      var removed = chain.removeAtom(atom, removeEmptyResiduesAndChains);
+      if (removed && chain.residues().length === 0) {
+        this._chains = this._chains.filter(function (c) {
+          return c !== chain;
+        });
+      }
+      return removed;
+    },
     containsResidue: function (residue) {
       if (!residue) {
         return false;
@@ -8271,6 +8534,18 @@ molMol = mol = function (chain, bond, select) {
         return false;
       }
       return chain.containsResidue(residue);
+    },
+    addResidues: function (residues, recurse) {
+      var that = this;
+      var chainsViews = {};
+      residues.forEach(function (residue) {
+        var chainName = residue.chain().name();
+        if (typeof chainsViews[chainName] === 'undefined') {
+          chainsViews[chainName] = that.addChain(residue.chain(), false);
+        }
+        chainsViews[chainName].addResidue(residue, recurse);
+      });
+      return chainsViews;
     },
     chains: function () {
       return this._chains;
@@ -8554,7 +8829,7 @@ svd = function () {
   return svd;
 }();
 molSuperpose = function () {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var mat3 = glMatrix.mat3;
   var quat = glMatrix.quat;
@@ -8676,8 +8951,8 @@ molSuperpose = function () {
         tmp[8] = -1;
         mat3.mul(uMat, uMat, tmp);
       }
+      console.log(mat3.str(uMat));
       mat3.mul(rotation, mat3.transpose(vMat, vMat), uMat);
-      mat3.transpose(rotation, rotation);
       var allAtoms = structure.full().atoms();
       for (var i = 0; i < allAtoms.length; ++i) {
         var atom = allAtoms[i];
@@ -8746,7 +9021,7 @@ molSuperpose = function () {
       var residuesA = matchedResidues[0];
       var residuesB = matchedResidues[1];
       if (residuesA.length !== residuesB.length) {
-        console.errors('chains', chainA.name(), ' and', chainB.name(), ' do not contain the same number of residues.');
+        console.error('chains', chainA.name(), ' and', chainB.name(), ' do not contain the same number of residues.');
         return null;
       }
       var outChainA = outA.addChain(chainA);
@@ -8806,7 +9081,7 @@ molSuperpose = function () {
   };
 }();
 molAll = mol = function (sp) {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var zhangSkolnickSS = function () {
     var posOne = vec3.create();
@@ -8876,7 +9151,7 @@ molAll = mol = function (sp) {
   };
 }(molSuperpose);
 io = function (symmetry) {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var mat4 = glMatrix.mat4;
   function Remark350Reader() {
@@ -9331,7 +9606,7 @@ io = function (symmetry) {
   };
 }(molSymmetry);
 viewpoint = function () {
-  'use strict';
+  
   var vec3 = glMatrix.vec3;
   var mat3 = glMatrix.mat3;
   var calculateCovariance = function () {
@@ -9437,7 +9712,7 @@ viewpoint = function () {
   return { principalAxes: principalAxes };
 }();
 pv = function () {
-  'use strict';
+  
   return {
     Viewer: viewer.Viewer,
     isWebGLSupported: viewer.isWebGLSupported,
