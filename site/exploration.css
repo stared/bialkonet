@@ -76,6 +76,14 @@ div.tooltip
     top: 20px;
 }
 
+#reset
+{
+    position: absolute;
+    z-index: 5;
+    left: 250px;
+    top: 20px;
+}
+
 .legendSvg
 {
     position: absolute;

@@ -26,6 +26,8 @@ function ProteinViewer(domId) {
 
   this.onClickingAtom();
 
+  this.onClickingReset = function () {};
+
   this.colorNameList = [];
 
   this.proteinLegend = new proteinLegend(domId);
@@ -80,6 +82,14 @@ function ProteinViewer(domId) {
       .append('option')
         .attr("value", function (d) { return d; })
         .text(function (d) { return d; })
+
+  d3.select("#" + domId).append('button')
+    .attr('id', 'reset')
+    .text('reset')
+    .on('click', function () {
+      that.clear();
+      that.onClickingReset();
+    });
 
   //
   // functions
