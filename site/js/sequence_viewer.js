@@ -81,6 +81,21 @@ function SequenceViewer(domId, width, height, margin) {
 
   };
 
+  function removeCommonDeletions (data, maxL) {
+    var i, isMissing;
+
+    data.forEach(function (flu) {
+      flu.sequenceToShow = [];
+    });
+
+    for (i = 0; i < maxL; i++) {
+      if (!_.every(data, function (d) { return d.sequence[i] === '-'; })) {
+        data.forEach(function (flu) {
+          flu.sequenceToShow.push(flu.sequence[i]);
+        })
+      }
+    }
+  }
 
   this.draw = function (data) {
 
@@ -89,6 +104,8 @@ function SequenceViewer(domId, width, height, margin) {
 
     // WARNING: as it is right now it might not work for changing domain length
     var maxL = d3.max(data, function (d) { return d.sequence.length; });
+
+    removeCommonDeletions(data, maxL);
 
     var dX = function() {
       return that.scaleX(1) - that.scaleX(0);
@@ -127,18 +144,24 @@ function SequenceViewer(domId, width, height, margin) {
       .append('g')
         .attr('class', 'sequence');
 
-    sequences
+    var letters = sequences
       .attr('transform', function (d, i) {
         return "translate(0," + scaleY(i) + ")";
       })
       .selectAll('.letter')
-        .data(function(d) { return d.sequence; })
-        .enter()
-        .append('text')
-          .attr('class', 'letter')
-          .attr('x', function (d, i) { return that.scaleX(i); })
-          .style('font-size', Math.min(15, dX()))
-          .text(function (d) { return d; });
+      .data(function(d) { return d.sequenceToShow; })
+
+    letters.enter()
+      .append('text')
+        .attr('class', 'letter')
+
+    letters   
+      .attr('x', function (d, i) { return that.scaleX(i); })
+      .style('font-size', Math.min(15, dX()))
+      .text(function (d) { return d; });
+
+    letters.exit()
+      .remove();
 
     sequences.exit()
       .remove();
@@ -159,7 +182,7 @@ function SequenceViewer(domId, width, height, margin) {
       that.svg.selectAll('.sequence')
         .data(data, function (d) { return d.name; })
           .selectAll('.letter')
-          .data(function(d) { return d.sequence; })
+          .data(function(d) { return d.sequenceToShow; })
             .attr('x', function (d, i) { return that.scaleX(i); })
             .style('font-size', Math.min(15, dX()));
 
@@ -224,13 +247,18 @@ function SequenceViewer(domId, width, height, margin) {
       .data(this.data)
       .selectAll('text')
         .data(function (d) {
-          var chars = d.sequence.slice(pos - 2, pos + 3);
-          // error thx to JS treating " " like false... :/
-          if (pos < 2) {
-            return _.repeat("-", 2 - pos) + chars;
+          var chars = d.sequenceToShow.slice(pos - 2, pos + 3);
+          // it may be shorter than 5 chars, so we need to add empty spaces
+          if (pos == 0) {
+            chars.unshift([" "]);
+            chars.unshift([" "]);
+          } else if (pos == 1) {
+            chars.unshift([" "]);
           } else {
-            return _.padRight(chars, 6, "-");
+            chars.push([" "]);
+            chars.push([" "]);
           }
+          return chars;
         })
           .text(function (d) { return d; });
 

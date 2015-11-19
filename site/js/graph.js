@@ -163,8 +163,7 @@ function DistanceGraph(domId) {
             return;
           }
           proteinViewer.load(d.p_id, ["pdb/" + thisDG.nodeDataset + "/", d.p_id, ".pdb"].join(""));
-          // WARNING: temporary workaround with regex to make zooming working;
-          sequenceViewer.load(d.p_id, d.sequence.replace(/-/g, ""), proteinViewer.superimpose);
+          sequenceViewer.load(d.p_id, d.sequence, proteinViewer.superimpose);
         })
         .call(drag);
 
