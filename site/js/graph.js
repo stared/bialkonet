@@ -304,47 +304,29 @@ function GraphOptions(parentDom, optionList, legend){
       })
       .value();
 
-    // hard-coded, but it will be changed
-    if (field != 'yearNum') {
+    var colorMap = _.indexBy(aggregated, field);
+    var n = aggregated.length;
+    var colorF;
 
-      var colorMap = _.indexBy(aggregated, field);
-
-      if (aggregated.length <= 10) {
-        var colorF = d3.scale.category10();
-      } else if (aggregated.length <= 20) {
-        var colorF = d3.scale.category20();
-      } else {
-        var n = aggregated.length;
-        var colorF = d3.scale.linear()
-          .domain([0, n/3, 2*n/3, 3.5*n/3])
-          .range(['red', 'green', 'blue', 'red']);
-      }
-
-      legend.update(aggregated, field, colorF);
-
-      this.node.style("fill", function(d) {
-        return colorF(colorMap[d[field]].i); 
-      });
-
+    if (field === 'yearNum') {
+      colorF = d3.scale.linear()
+        .domain([0, 1, n/2, n-1])
+        .range(['black', 'red', 'green', 'blue']);  
+    } else if (n <= 10) {
+      colorF = d3.scale.category10();
+    } else if (n <= 20) {
+      colorF = d3.scale.category20();
     } else {
-
-      // because of data messiness, +d.year is not enough
-      var yearMin = d3.min(this.nodes, function (d) { return parseInt(d.year); }); 
-      var yearMax = d3.max(this.nodes, function (d) { return parseInt(d.year); });
-
-      var colorScale = d3.scale.log()
-        .domain([1, yearMax + 1 - yearMin])
-        .range(['red', 'blue']);
-
-      legend.update(aggregated, field, colorScale);
-
-      // need to make colors on nodes the same as for the legend (linear vs ordinal)
-      this.node.style("fill", function(d) {
-        return isFinite(d.yearNum) ? colorScale(yearMax + 1 - d.yearNum) : "#000"; 
-      });
-
+      colorF = d3.scale.linear()
+        .domain([0, n/3, 2*n/3, 3.5*n/3])
+        .range(['red', 'green', 'blue', 'red']);
     }
 
+    legend.update(aggregated, field, colorF);
+
+    this.node.style("fill", function(d) {
+      return colorF(colorMap[d[field]].i); 
+    });
 
   };
 
@@ -352,6 +334,8 @@ function GraphOptions(parentDom, optionList, legend){
 
 
 function Legend (parentDom) {
+
+  var labelsPerColumn = 25;
 
   this.g = d3.select(parentDom).append('g');
 
@@ -369,8 +353,8 @@ function Legend (parentDom) {
       .enter()
       .append('rect')
         .attr('class', 'legend-box')
-        .attr('x', function (d, i) { return 70 * Math.floor(i / 24); })
-        .attr('y', function (d, i) { return 15 * (i % 24); })
+        .attr('x', function (d, i) { return 70 * Math.floor(i / labelsPerColumn); })
+        .attr('y', function (d, i) { return 15 * (i % labelsPerColumn); })
         .attr('width', 10)
         .attr('height', 10)
         .style('fill', function (d) { return colorF(d.i); })
@@ -387,8 +371,8 @@ function Legend (parentDom) {
       .enter()
       .append('text')
         .attr('class', 'legend-label')
-        .attr('x', function (d, i) { return 15 + 70 * Math.floor(i / 24); })
-        .attr('y', function (d, i) { return 15 * (i % 24) + 10; })
+        .attr('x', function (d, i) { return 15 + 70 * Math.floor(i / labelsPerColumn); })
+        .attr('y', function (d, i) { return 15 * (i % labelsPerColumn) + 10; })
         .text(function (d) { return d.name; })
         .on('mouseover', function (d) {
           node.style('stroke', function (c) {
