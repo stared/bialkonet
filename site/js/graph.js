@@ -17,6 +17,7 @@ function DistanceGraph(domId) {
   var nodeDatasets = [
     {name: "crystals"},
     {name: "models"},
+    {name: "crystals_models"}
   ];
 
   var linkDatasets = [
@@ -49,10 +50,20 @@ function DistanceGraph(domId) {
         .on('click', function (d) {
           thisDG.nodeDataset = d.name;
           thisDG.force.stop();
-          d3.csv("data/metadata_" + d.name + ".csv", function(error, nodes) {
-            thisDG.updateNodes(nodes);
-          });
-
+          if (d.name === 'crystals_models') {
+            d3.csv("data/metadata_crystals.csv", function(error, nodesC) {
+              d3.csv("data/metadata_models.csv", function(error, nodesM) {
+                nodesC.forEach(function (c) { c.database = 'crystals'; });
+                nodesM.forEach(function (c) { c.database = 'models'; });
+                thisDG.updateNodes(nodesC.concat(nodesM));
+              });
+            });
+          } else {
+            d3.csv("data/metadata_" + d.name + ".csv", function(error, nodes) {
+              nodes.forEach(function (c) { c.database = d.name; });
+              thisDG.updateNodes(nodes);
+            });
+          }
           menu
             .selectAll(".node-file")
             .data(nodeDatasets)
@@ -66,7 +77,7 @@ function DistanceGraph(domId) {
     .enter()
       .append('text')
         .attr('class', 'dist-file')
-        .attr('x', 100)
+        .attr('x', 160)
         .attr('y', function (d, i) { return 20 * i; })
         .text(function (d) { return d.name; })
         .style("opacity", function (d) {
@@ -111,6 +122,11 @@ function DistanceGraph(domId) {
         gravity: 0.7
       },
       models: {
+        r: 4,
+        charge: -120,
+        gravity: 2.5
+      },
+      crystals_models: {
         r: 4,
         charge: -120,
         gravity: 2.5
@@ -162,7 +178,7 @@ function DistanceGraph(domId) {
           if (_.includes(_.pluck(proteinViewer.colorNameList, 'name'), d.p_id)) {
             return;
           }
-          proteinViewer.load(d.p_id, ["pdb/" + thisDG.nodeDataset + "/", d.p_id, ".pdb"].join(""));
+          proteinViewer.load(d.p_id, ["pdb/" + d.database + "/", d.p_id, ".pdb"].join(""));
           sequenceViewer.load(d.p_id, d.sequence, proteinViewer.superimpose);
         })
         .call(drag);
@@ -220,6 +236,9 @@ function DistanceGraph(domId) {
       models_rmsd: function (d) { return Math.exp(-d.value/0.5); },
       models_esp: function (d) {return Math.exp(-Math.pow(d.distance/0.15, 8)); },
       models_seq: function (d) {return Math.pow(d.distance/1800, 8); },
+      crystals_models_rmsd: function (d) { return Math.exp(-d.value/0.5); },
+      crystals_models_esp: function (d) {return Math.exp(-Math.pow(d.distance/0.15, 8)); },
+      crystals_models_seq: function (d) {return Math.pow(d.distance/1800, 8); },
     }
 
     var wf = wfs[this.nodeDataset + "_" + this.linkDataset];
