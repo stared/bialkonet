@@ -311,7 +311,7 @@ function GraphOptions(parentDom, optionList, legend){
     if (field === 'yearNum') {
       colorF = d3.scale.linear()
         .domain([0, 1, n/2, n-1])
-        .range(['black', 'red', 'green', 'blue']);  
+        .range(['black', 'red', '#00B000', 'blue']);  
     } else if (n <= 10) {
       colorF = d3.scale.category10();
     } else if (n <= 20) {
@@ -319,7 +319,7 @@ function GraphOptions(parentDom, optionList, legend){
     } else {
       colorF = d3.scale.linear()
         .domain([0, n/3, 2*n/3, 3.5*n/3])
-        .range(['red', 'green', 'blue', 'red']);
+        .range(['red', '#00B000', 'blue', 'red']);
     }
 
     legend.update(aggregated, field, colorF);
