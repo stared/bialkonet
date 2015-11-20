@@ -157,7 +157,7 @@ function SequenceViewer(domId, width, height, margin) {
 
     letters   
       .attr('x', function (d, i) { return that.scaleX(i); })
-      .style('font-size', Math.min(15, dX()))
+      .style('font-size', '' + Math.min(15, dX()) + 'px')
       .text(function (d) { return d; });
 
     letters.exit()
@@ -184,7 +184,7 @@ function SequenceViewer(domId, width, height, margin) {
           .selectAll('.letter')
           .data(function(d) { return d.sequenceToShow; })
             .attr('x', function (d, i) { return that.scaleX(i); })
-            .style('font-size', Math.min(15, dX()));
+            .style('font-size', '' + Math.min(15, dX()) + 'px');
 
       that.hover.style("opacity", dX() > 10 ? 0 : null);
 
