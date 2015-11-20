@@ -243,8 +243,6 @@ function DistanceGraph(domId) {
       return d.source !== undefined && d.target !== undefined && d.source !== d.target;
     }); 
 
-    console.log("mean weigth", d3.mean(this.links, function(d) { return d.weight; }));
-
     this.force = this.force
       .links(this.links)
       .linkStrength(function (d) {
